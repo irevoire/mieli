@@ -1,4 +1,8 @@
-use std::io::{stdin, Read};
+use std::{
+    fs::File,
+    io::{stdin, Read},
+    path::PathBuf,
+};
 
 use crate::{DocId, DumpId, Options, UpdateId};
 use anyhow::Result;
@@ -24,7 +28,10 @@ impl From<&Options> for Meilisearch {
 impl Meilisearch {
     pub fn get_one_document(&self, docid: DocId) -> Result<()> {
         let response = Client::new()
-            .get(&format!("{}/indexes/{}/documents/{}", self.addr, self.index, docid))
+            .get(&format!(
+                "{}/indexes/{}/documents/{}",
+                self.addr, self.index, docid
+            ))
             .send()?;
         handle_response(response)
     }
@@ -37,21 +44,37 @@ impl Meilisearch {
         handle_response(response)
     }
 
-    pub fn index_documents(&self, content_type: String, reindex: bool) -> Result<()> {
-        // TODO: is this the only way to do it?
-        let mut buffer = Vec::new();
-        stdin().read_to_end(&mut buffer);
-
+    pub fn index_documents(
+        &self,
+        filepath: Option<PathBuf>,
+        content_type: String,
+        reindex: bool,
+    ) -> Result<()> {
         let url = format!("{}/indexes/{}/documents", self.addr, self.index);
-
         let client = match reindex {
             false => Client::new().post(url),
             true => Client::new().put(url),
         };
-        let response = client
-            .header("Content-Type", content_type)
-            .body(buffer)
-            .send()?;
+
+        let response = match filepath {
+            Some(filepath) => {
+                let file = File::open(filepath)?;
+                client
+                    .header("Content-Type", content_type)
+                    .body(file)
+                    .send()?
+            }
+            None => {
+                // TODO: is this the only way to do it?
+                let mut buffer = Vec::new();
+                stdin().read_to_end(&mut buffer);
+
+                client
+                    .header("Content-Type", content_type)
+                    .body(buffer)
+                    .send()?
+            }
+        };
         handle_response(response)
     }
 
@@ -64,14 +87,20 @@ impl Meilisearch {
 
     pub fn delete_one(&self, docid: DocId) -> Result<()> {
         let response = Client::new()
-            .delete(format!("{}/indexes/{}/documents/{}", self.addr, self.index, docid))
+            .delete(format!(
+                "{}/indexes/{}/documents/{}",
+                self.addr, self.index, docid
+            ))
             .send()?;
         handle_response(response)
     }
 
     pub fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
         let response = Client::new()
-            .post(format!("{}/indexes/{}/documents/delete-batch", self.addr, self.index))
+            .post(format!(
+                "{}/indexes/{}/documents/delete-batch",
+                self.addr, self.index
+            ))
             .json(docids)
             .send()?;
         handle_response(response)
@@ -79,15 +108,16 @@ impl Meilisearch {
 
     pub fn status(&self, uid: UpdateId) -> Result<()> {
         let response = Client::new()
-            .get(format!("{}/indexes/{}/updates/{}", self.addr, self.index, uid))
+            .get(format!(
+                "{}/indexes/{}/updates/{}",
+                self.addr, self.index, uid
+            ))
             .send()?;
         handle_response(response)
     }
 
     pub fn create_dump(&self) -> Result<()> {
-        let response = Client::new()
-            .post(format!("{}/dumps", self.addr))
-            .send()?;
+        let response = Client::new().post(format!("{}/dumps", self.addr)).send()?;
         handle_response(response)
     }
 
@@ -99,23 +129,17 @@ impl Meilisearch {
     }
 
     pub fn healthcheck(&self) -> Result<()> {
-        let response = Client::new()
-            .get(format!("{}/health", self.addr))
-            .send()?;
+        let response = Client::new().get(format!("{}/health", self.addr)).send()?;
         handle_response(response)
     }
 
     pub fn version(&self) -> Result<()> {
-        let response = Client::new()
-            .get(format!("{}/version", self.addr))
-            .send()?;
+        let response = Client::new().get(format!("{}/version", self.addr)).send()?;
         handle_response(response)
     }
 
     pub fn stats(&self) -> Result<()> {
-        let response = Client::new()
-            .get(format!("{}/stats", self.addr))
-            .send()?;
+        let response = Client::new().get(format!("{}/stats", self.addr)).send()?;
         handle_response(response)
     }
 }

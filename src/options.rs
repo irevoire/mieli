@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use structopt::*;
 
 use crate::{DocId, UpdateId};
@@ -6,7 +8,12 @@ use crate::{DocId, UpdateId};
 #[structopt(about = "A stupid wrapper around meilisearch")]
 pub struct Options {
     /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
-    #[structopt(short, long, default_value = "http://localhost:7700", env = "MEILI_ADDR")]
+    #[structopt(
+        short,
+        long,
+        default_value = "http://localhost:7700",
+        env = "MEILI_ADDR"
+    )]
     pub addr: String,
 
     /// The name of the index
@@ -25,7 +32,7 @@ pub enum Command {
         document_id: Option<DocId>,
     },
     /// Add documents with the `post` verb
-    /// You must pipe your documents in the command
+    /// You can pipe your documents in the command
     Add {
         /// Set the content-type of your file
         #[structopt(short, default_value = "application/json")]
@@ -33,16 +40,20 @@ pub enum Command {
         /// The command will exit immediatly after sending the documents
         #[structopt(short, long)]
         r#async: bool,
+        /// The file you want to send
+        file: Option<PathBuf>,
     },
     /// Replace documents with the `put` verb
-    /// You must pipe your documents in the command
-    Replace {
+    /// You can pipe your documents in the command
+    Update {
         /// Set the content-type of your file
         #[structopt(short, default_value = "application/json")]
         content_type: String,
         /// The command will exit immediatly after sending the documents
         #[structopt(short, long)]
         r#async: bool,
+        /// The file you want to send
+        file: Option<PathBuf>,
     },
     /// Delete documents. If no argument are specified all documents are deleted.
     Delete {
@@ -61,9 +72,7 @@ pub enum Command {
         dump_id: Option<String>,
     },
     /// Return the status of an update
-    Status {
-        update_id: UpdateId,
-    },
+    Status { update_id: UpdateId },
     /// Do an healthcheck
     Health,
     /// Return the version of the running meilisearch instance
@@ -75,6 +84,6 @@ pub enum Command {
         #[structopt(short)]
         message: Option<String>,
         #[structopt(short)]
-        all: bool
-    }
+        all: bool,
+    },
 }

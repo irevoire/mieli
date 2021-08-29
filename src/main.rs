@@ -27,14 +27,16 @@ fn main() -> Result<()> {
         Command::Add {
             content_type,
             r#async,
+            file,
         } => {
-            meili.index_documents(content_type, false)?;
+            meili.index_documents(file, content_type, false)?;
         }
-        Command::Replace {
+        Command::Update {
             content_type,
             r#async,
+            file,
         } => {
-            meili.index_documents(content_type, true)?;
+            meili.index_documents(file, content_type, true)?;
         }
         Command::Delete {
             document_ids,
