@@ -1,19 +1,24 @@
 use std::{
     fs::File,
-    io::{stdin, Read},
+    io::{stdin, Read, Write},
     path::PathBuf,
 };
 
-use crate::{DocId, DumpId, Options, UpdateId};
+use crate::{
+    format::{write_json, write_response_full},
+    DocId, DumpId, Options, UpdateId,
+};
 use anyhow::Result;
-use reqwest::blocking::Client;
-
-use crate::handle_response;
+use indicatif::ProgressBar;
+use reqwest::blocking::{Client, Response};
+use serde_json::Value;
 
 #[derive(Debug, Default)]
 pub struct Meilisearch {
     addr: String,
     index: String,
+    interval: usize,
+    r#async: bool,
 }
 
 impl From<&Options> for Meilisearch {
@@ -21,31 +26,40 @@ impl From<&Options> for Meilisearch {
         Self {
             addr: options.addr.clone(),
             index: options.index.clone(),
+            interval: options.interval,
+            r#async: true,
         }
     }
 }
 
 impl Meilisearch {
-    pub fn get_one_document(&self, docid: DocId) -> Result<()> {
+    pub fn r#async(self, r#async: bool) -> Self {
+        Self { r#async, ..self }
+    }
+
+    pub fn get_one_document(&self, output: &mut dyn Write, docid: DocId) -> Result<()> {
         let response = Client::new()
             .get(&format!(
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn get_all_documents(&self) -> Result<()> {
+    pub fn get_all_documents(&self, output: &mut dyn Write) -> Result<()> {
         // TODO: we should cycle to get ALL the documents
         let response = Client::new()
             .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
     pub fn index_documents(
         &self,
+        output: &mut dyn Write,
         filepath: Option<PathBuf>,
         content_type: String,
         reindex: bool,
@@ -75,27 +89,30 @@ impl Meilisearch {
                     .send()?
             }
         };
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn delete_all(&self) -> Result<()> {
+    pub fn delete_all(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new()
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn delete_one(&self, docid: DocId) -> Result<()> {
+    pub fn delete_one(&self, output: &mut dyn Write, docid: DocId) -> Result<()> {
         let response = Client::new()
             .delete(format!(
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
+    pub fn delete_batch(&self, output: &mut dyn Write, docids: &[DocId]) -> Result<()> {
         let response = Client::new()
             .post(format!(
                 "{}/indexes/{}/documents/delete-batch",
@@ -103,43 +120,86 @@ impl Meilisearch {
             ))
             .json(docids)
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn status(&self, uid: UpdateId) -> Result<()> {
+    pub fn status(&self, output: &mut dyn Write, uid: UpdateId) -> Result<()> {
         let response = Client::new()
             .get(format!(
                 "{}/indexes/{}/updates/{}",
                 self.addr, self.index, uid
             ))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn create_dump(&self) -> Result<()> {
+    pub fn create_dump(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new().post(format!("{}/dumps", self.addr)).send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
+    pub fn dump_status(&self, output: &mut dyn Write, dump_id: DumpId) -> Result<()> {
         let response = Client::new()
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
             .send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn healthcheck(&self) -> Result<()> {
+    pub fn healthcheck(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new().get(format!("{}/health", self.addr)).send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn version(&self) -> Result<()> {
+    pub fn version(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new().get(format!("{}/version", self.addr)).send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
     }
 
-    pub fn stats(&self) -> Result<()> {
+    pub fn stats(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new().get(format!("{}/stats", self.addr)).send()?;
-        handle_response(response)
+        self.handle_response(output, response)?;
+        Ok(())
+    }
+
+    pub fn handle_response(&self, output: &mut dyn Write, response: Response) -> Result<()> {
+        let response = write_response_full(output, response)?;
+        if self.r#async {
+            return Ok(());
+        }
+
+        let spinner = ProgressBar::new_spinner();
+
+        let buffer = String::new();
+
+        if let Some(uid) = response["updateId"].as_i64() {
+            loop {
+                let response = Client::new()
+                    .get(format!(
+                        "{}/indexes/{}/updates/{}",
+                        self.addr, self.index, uid
+                    ))
+                    .send()?;
+                let json = response.json::<Value>()?;
+                match json["status"].as_str() {
+                    None => {
+                        return Ok(());
+                    }
+                    Some(msg @ "processed") | Some(msg @ "failed") => {
+                        spinner.finish_with_message(msg.to_string());
+                        write_json(output, json);
+                        break;
+                    }
+                    Some(status) => spinner.set_message(status.to_string()),
+                }
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        }
+        Ok(())
     }
 }
