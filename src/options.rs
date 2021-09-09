@@ -83,11 +83,18 @@ pub enum Command {
     Version,
     /// Return the stats about the indexes
     Stats,
-    /// Do a search
+    /// Do a search. You must pipe your parameter in the command as a json
     Search {
         #[structopt(short)]
         message: Option<String>,
         #[structopt(short)]
         all: bool,
     },
+    /// Update the settings. You must pipe your parameter in the command as a json.
+    Settings {
+        /// The command will exit immediatly after asking for a dump
+        #[structopt(short, long)]
+        r#async: bool,
+    },
+
 }

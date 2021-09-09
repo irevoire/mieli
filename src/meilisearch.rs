@@ -124,6 +124,32 @@ impl Meilisearch {
         Ok(())
     }
 
+    pub fn search(&self, output: &mut dyn Write) -> Result<()> {
+        let mut buffer = Vec::new();
+        stdin().read_to_end(&mut buffer);
+
+        let response = Client::new()
+            .post(format!("{}/indexes/{}/search", self.addr, self.index))
+            .header("Content-Type", "application/json")
+            .body(buffer)
+            .send()?;
+
+        self.handle_response(output, response)
+    }
+
+    pub fn settings(&self, output: &mut dyn Write) -> Result<()> {
+        let mut buffer = Vec::new();
+        stdin().read_to_end(&mut buffer);
+
+        let response = Client::new()
+            .post(format!("{}/indexes/{}/settings", self.addr, self.index))
+            .header("Content-Type", "application/json")
+            .body(buffer)
+            .send()?;
+
+        self.handle_response(output, response)
+    }
+
     pub fn status(&self, output: &mut dyn Write, uid: UpdateId) -> Result<()> {
         let response = Client::new()
             .get(format!(
