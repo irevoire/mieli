@@ -20,6 +20,10 @@ pub struct Options {
     #[structopt(short, long, default_value = "mieli")]
     pub index: String,
 
+    /// Interval between each status check (in milliseconds)
+    #[structopt(long, default_value = "500")]
+    pub interval: usize,
+
     #[structopt(subcommand)]
     pub command: Command,
 }
