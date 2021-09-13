@@ -1,6 +1,6 @@
-# Mieli
+# Mieli 🐻
 
-## Usage
+## Usage 🧸
 
 ```
 A stupid wrapper around meilisearch
@@ -33,7 +33,7 @@ SUBCOMMANDS:
     version     Return the version of the running meilisearch instance
 ```
 
-## Installation
+## Get mieli on your system 🍯
 
 ```
 git clone https://irevoire/mieli
