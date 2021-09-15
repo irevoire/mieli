@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest, windows-latest]
+        os: [ubuntu-18.04, macos-latest]
         include:
           - os: ubuntu-18.04
             artifact_name: mieli
@@ -18,9 +18,6 @@ jobs:
           - os: macos-latest
             artifact_name: mieli
             asset_name: mieli-macos-amd64
-          - os: windows-latest
-            artifact_name: mieli.exe
-            asset_name: mieli-windows-amd64.exe
 
     steps:
     - uses: hecrj/setup-rust-action@master
