@@ -36,7 +36,7 @@ SUBCOMMANDS:
 ## Get mieli on your system 🍯
 
 ```
-git clone https://irevoire/mieli
+git clone https://github.com/irevoire/mieli
 cargo install path mieli
 ```
 
