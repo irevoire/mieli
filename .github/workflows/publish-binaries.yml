@@ -1,0 +1,66 @@
+on:
+  release:
+    types: [published]
+
+name: Publish binaries to release
+
+jobs:
+  publish:
+    name: Publish for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-18.04
+            artifact_name: mieli
+            asset_name: mieli-linux-amd64
+          - os: macos-latest
+            artifact_name: mieli
+            asset_name: mieli-macos-amd64
+          - os: windows-latest
+            artifact_name: mieli.exe
+            asset_name: mieli-windows-amd64.exe
+
+    steps:
+    - uses: hecrj/setup-rust-action@master
+      with:
+        rust-version: stable
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build --release --locked
+    - name: Compress binaries
+      uses: svenstaro/upx-action@v2
+      with:
+        file: target/release/${{ matrix.artifact_name }}
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.PUBLISH_TOKEN }}
+        file: target/release/${{ matrix.artifact_name }}
+        asset_name: ${{ matrix.asset_name }}
+        tag: ${{ github.ref }}
+
+  publish-armv8:
+    name: Publish for ARMv8
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: uraimo/run-on-arch-action@v1.0.7
+        id: runcmd
+        with:
+          architecture: aarch64 # aka ARMv8
+          distribution: ubuntu18.04
+          run: |
+            apt update
+            apt install -y curl gcc make
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+            source $HOME/.cargo/env
+            cargo build --release --locked
+      - name: Upload the binary to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.PUBLISH_TOKEN }}
+          file: target/release/mieli
+          asset_name: mieli-linux-armv8
+          tag: ${{ github.ref }}
