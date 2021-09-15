@@ -96,5 +96,4 @@ pub enum Command {
         #[structopt(short, long)]
         r#async: bool,
     },
-
 }

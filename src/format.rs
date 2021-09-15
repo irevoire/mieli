@@ -15,7 +15,7 @@ pub fn write_response_headers(output: &mut dyn Write, response: &Response) -> Re
 
 pub fn write_json(output: &mut dyn Write, response: Value) -> Result<Value> {
     writeln!(output, "{}", color::Fg(color::Reset))?;
-    writeln!(output, "{}", serde_json::to_string_pretty(&response)?)?;
+    writeln!(output, "{}", colored_json::to_colored_json_auto(&response)?)?;
     Ok(response)
 }
 

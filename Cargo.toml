@@ -12,3 +12,4 @@ reqwest = { version = "0.11.4", features = ["rustls-tls", "blocking", "json"] }
 termion = "*"
 serde_json = "*"
 indicatif = "0.16.2"
+colored_json = "2.1.0"
