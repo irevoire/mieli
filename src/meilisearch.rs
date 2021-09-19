@@ -223,7 +223,7 @@ impl Meilisearch {
                     }
                     Some(status) => spinner.set_message(status.to_string()),
                 }
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
             }
         }
         Ok(())

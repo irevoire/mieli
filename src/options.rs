@@ -21,7 +21,7 @@ pub struct Options {
     pub index: String,
 
     /// Interval between each status check (in milliseconds)
-    #[structopt(long, default_value = "500")]
+    #[structopt(long, default_value = "200")]
     pub interval: usize,
 
     #[structopt(subcommand)]
