@@ -9,6 +9,7 @@ use crate::{DocId, UpdateId};
 pub struct Options {
     /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
     #[structopt(
+        global = true,
         short,
         long,
         default_value = "http://localhost:7700",
@@ -17,11 +18,11 @@ pub struct Options {
     pub addr: String,
 
     /// The name of the index
-    #[structopt(short, long, default_value = "mieli")]
+    #[structopt(global = true, short, long, default_value = "mieli")]
     pub index: String,
 
     /// Interval between each status check (in milliseconds)
-    #[structopt(long, default_value = "200")]
+    #[structopt(global = true, long, default_value = "200")]
     pub interval: usize,
 
     #[structopt(subcommand)]
@@ -42,7 +43,7 @@ pub enum Command {
         #[structopt(short, default_value = "application/json")]
         content_type: String,
         /// The command will exit immediatly after sending the documents
-        #[structopt(short, long)]
+        #[structopt(long)]
         r#async: bool,
         /// The file you want to send
         file: Option<PathBuf>,
@@ -54,7 +55,7 @@ pub enum Command {
         #[structopt(short, default_value = "application/json")]
         content_type: String,
         /// The command will exit immediatly after sending the documents
-        #[structopt(short, long)]
+        #[structopt(long)]
         r#async: bool,
         /// The file you want to send
         file: Option<PathBuf>,
@@ -64,13 +65,13 @@ pub enum Command {
         /// The list of document ids you want to delete
         document_ids: Vec<DocId>,
         /// The command will exit immediatly after sending the documents ids
-        #[structopt(short, long)]
+        #[structopt(long)]
         r#async: bool,
     },
     /// Create a dump or get the status of a dump
     Dump {
         /// The command will exit immediatly after asking for a dump
-        #[structopt(short, long)]
+        #[structopt(long)]
         r#async: bool,
         /// The dump you want info from
         dump_id: Option<String>,
@@ -85,15 +86,14 @@ pub enum Command {
     Stats,
     /// Do a search. You must pipe your parameter in the command as a json
     Search {
-        #[structopt(short)]
-        message: Option<String>,
-        #[structopt(short)]
+        message: String,
+        #[structopt(long)]
         all: bool,
     },
     /// Update the settings. You must pipe your parameter in the command as a json.
     Settings {
         /// The command will exit immediatly after asking for a dump
-        #[structopt(short, long)]
+        #[structopt(long)]
         r#async: bool,
     },
 }
