@@ -77,7 +77,13 @@ pub enum Command {
         dump_id: Option<String>,
     },
     /// Return the status of an update
-    Status { update_id: UpdateId },
+    Status {
+        /// The update id
+        update_id: UpdateId,
+        /// If the flag is set, the command will wait until the update finishes
+        #[structopt(short, long)]
+        watch: bool,
+    },
     /// Do an healthcheck
     Health,
     /// Return the version of the running meilisearch instance
