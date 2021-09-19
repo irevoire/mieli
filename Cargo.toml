@@ -2,6 +2,14 @@
 name = "mieli"
 version = "0.1.0"
 edition = "2018"
+description = "A cli around Meilisearch"
+readme = "README.md"
+homepage = "https://meilisearch.com/"
+documentation = "https://docs.meilisearch.com"
+license = "WTFPL"
+repository = "https://github.com/irevoire/mieli"
+keywords = ["meilisearch", "cli", "search", "bears"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
