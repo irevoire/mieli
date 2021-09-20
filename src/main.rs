@@ -8,8 +8,12 @@ mod options;
 use std::io::stdout;
 
 use anyhow::Result;
+use nom::branch::alt;
+use nom::character::complete::alphanumeric1;
+use nom::sequence::delimited;
 use options::{Command, Options};
 
+use serde_json::Value;
 use structopt::StructOpt;
 
 use crate::meilisearch::Meilisearch;
@@ -57,8 +61,10 @@ fn main() -> Result<()> {
                 ids => meili.delete_batch(stdout, ids)?,
             }
         }
-        Command::Search { message, all } => meili.search(stdout)?,
-        Command::Settings { r#async } => meili.r#async(r#async).settings(stdout)?,
+        Command::Search { arguments, all } => meili.search(cli_to_json(arguments)?, stdout)?,
+        Command::Settings { arguments, r#async } => meili
+            .r#async(r#async)
+            .settings(cli_to_json(arguments)?, stdout)?,
         Command::Dump {
             r#async,
             dump_id: None,
@@ -75,3 +81,33 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+use nom::bytes::complete::{tag, take, take_while1};
+use nom::character::is_alphanumeric;
+use nom::IResult;
+
+fn value(i: &str) -> IResult<&str, &str> {
+    alt((
+        alphanumeric1,
+        delimited(tag("\""), alphanumeric1, tag("\"")),
+        delimited(tag("'"), alphanumeric1, tag("'")),
+    ))(i)
+}
+
+fn cli_to_json(arguments: Vec<String>) -> anyhow::Result<Option<Value>> {
+    let arguments = arguments.join(" ");
+    dbg!(arguments);
+    todo!();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nom_value() {
+        let result = value("hello").finish();
+        assert_eq!();
+    }
+}
+

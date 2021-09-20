@@ -92,12 +92,13 @@ pub enum Command {
     Stats,
     /// Do a search. You must pipe your parameter in the command as a json
     Search {
-        message: String,
+        arguments: Vec<String>,
         #[structopt(long)]
         all: bool,
     },
     /// Update the settings. You must pipe your parameter in the command as a json.
     Settings {
+        arguments: Vec<String>,
         /// The command will exit immediatly after asking for a dump
         #[structopt(long)]
         r#async: bool,

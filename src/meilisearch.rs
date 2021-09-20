@@ -124,27 +124,31 @@ impl Meilisearch {
         Ok(())
     }
 
-    pub fn search(&self, output: &mut dyn Write) -> Result<()> {
-        let mut buffer = Vec::new();
-        stdin().read_to_end(&mut buffer);
+    pub fn search(&self, arguments: Option<Value>, output: &mut dyn Write) -> Result<()> {
+        let body = arguments.map(Ok).unwrap_or_else(|| {
+            let mut buffer = Vec::new();
+            stdin().read_to_end(&mut buffer);
+            serde_json::from_reader(buffer.as_slice())
+        })?;
 
         let response = Client::new()
             .post(format!("{}/indexes/{}/search", self.addr, self.index))
-            .header("Content-Type", "application/json")
-            .body(buffer)
+            .json(&body)
             .send()?;
 
         self.handle_response(output, response)
     }
 
-    pub fn settings(&self, output: &mut dyn Write) -> Result<()> {
-        let mut buffer = Vec::new();
-        stdin().read_to_end(&mut buffer);
+    pub fn settings(&self, arguments: Option<Value>, output: &mut dyn Write) -> Result<()> {
+        let body = arguments.map(Ok).unwrap_or_else(|| {
+            let mut buffer = Vec::new();
+            stdin().read_to_end(&mut buffer);
+            serde_json::from_reader(buffer.as_slice())
+        })?;
 
         let response = Client::new()
             .post(format!("{}/indexes/{}/settings", self.addr, self.index))
-            .header("Content-Type", "application/json")
-            .body(buffer)
+            .json(&body)
             .send()?;
 
         self.handle_response(output, response)

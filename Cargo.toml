@@ -19,6 +19,7 @@ structopt = "0.3.22"
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "blocking", "json"] }
 termion = "1.5.6"
 serde_json = "1.0.66"
+nom = "7.0.0"
 indicatif = "0.16.2"
 colored_json = "2.1.0"
 
