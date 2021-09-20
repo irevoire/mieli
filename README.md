@@ -52,7 +52,7 @@ echo '[{ "id": 1, "content": "I love gaspacho" }]' | mieli -i cook add
 ```bash
 # placeholder
 echo '{}' | mieli -i cook search
-# simple search with 
+# simple search with query
 echo '{ "q": "gaspacho" }' | mieli -i cook search
 ```
 
