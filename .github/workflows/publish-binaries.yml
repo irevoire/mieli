@@ -10,9 +10,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             artifact_name: mieli
             asset_name: mieli-linux-amd64
           - os: macos-latest
@@ -20,27 +20,27 @@ jobs:
             asset_name: mieli-macos-amd64
 
     steps:
-    - uses: hecrj/setup-rust-action@master
-      with:
-        rust-version: stable
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --release --locked
-    - name: Compress binaries
-      uses: svenstaro/upx-action@v2
-      with:
-        file: target/release/${{ matrix.artifact_name }}
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.PUBLISH_TOKEN }}
-        file: target/release/${{ matrix.artifact_name }}
-        asset_name: ${{ matrix.asset_name }}
-        tag: ${{ github.ref }}
+      - uses: hecrj/setup-rust-action@master
+        with:
+          rust-version: stable
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --release --locked
+      - name: Compress binaries
+        uses: svenstaro/upx-action@v2
+        with:
+          file: target/release/${{ matrix.artifact_name }}
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.PUBLISH_TOKEN }}
+          file: target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
 
   publish-armv8:
     name: Publish for ARMv8
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: uraimo/run-on-arch-action@v1.0.7
@@ -61,3 +61,16 @@ jobs:
           file: target/release/mieli
           asset_name: mieli-linux-armv8
           tag: ${{ github.ref }}
+
+  publish-crates-io:
+    name: Publish on crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: katyo/publish-crates@v1
+        with:
+          registry-token: ${{ secrets.CRATES_IO_REGISTRY_TOKEN }}
