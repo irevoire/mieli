@@ -35,8 +35,24 @@ SUBCOMMANDS:
 
 ## Get mieli on your system 🍯
 
+```bash
+cargo install mieli
 ```
-git clone https://github.com/irevoire/mieli
-cargo install path mieli
+
+## Examples 🐝
+
+### Add documents
+
+```bash
+echo '[{ "id": 1, "content": "I love gaspacho" }]' | mieli -i cook add
+```
+
+### Search
+
+```bash
+# placeholder
+echo '{}' | mieli -i cook search
+# simple search with query
+echo '{ "q": "gaspacho" }' | mieli -i cook search
 ```
 
