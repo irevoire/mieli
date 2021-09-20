@@ -17,6 +17,7 @@ use serde_json::Value;
 pub struct Meilisearch {
     addr: String,
     index: String,
+    key: String,
     interval: usize,
     r#async: bool,
 }
@@ -26,6 +27,7 @@ impl From<&Options> for Meilisearch {
         Self {
             addr: options.addr.clone(),
             index: options.index.clone(),
+            key: options.key.clone(),
             interval: options.interval,
             r#async: true,
         }
@@ -43,6 +45,7 @@ impl Meilisearch {
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
@@ -52,6 +55,7 @@ impl Meilisearch {
         // TODO: we should cycle to get ALL the documents
         let response = Client::new()
             .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
@@ -76,6 +80,7 @@ impl Meilisearch {
                 client
                     .header("Content-Type", content_type)
                     .body(file)
+                    .header("X-Meili-API-Key", &self.key)
                     .send()?
             }
             None => {
@@ -86,6 +91,7 @@ impl Meilisearch {
                 client
                     .header("Content-Type", content_type)
                     .body(buffer)
+                    .header("X-Meili-API-Key", &self.key)
                     .send()?
             }
         };
@@ -96,6 +102,7 @@ impl Meilisearch {
     pub fn delete_all(&self, output: &mut dyn Write) -> Result<()> {
         let response = Client::new()
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
@@ -107,6 +114,7 @@ impl Meilisearch {
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
@@ -118,6 +126,7 @@ impl Meilisearch {
                 "{}/indexes/{}/documents/delete-batch",
                 self.addr, self.index
             ))
+            .header("X-Meili-API-Key", &self.key)
             .json(docids)
             .send()?;
         self.handle_response(output, response)?;
@@ -131,6 +140,7 @@ impl Meilisearch {
         let response = Client::new()
             .post(format!("{}/indexes/{}/search", self.addr, self.index))
             .header("Content-Type", "application/json")
+            .header("X-Meili-API-Key", &self.key)
             .body(buffer)
             .send()?;
 
@@ -144,6 +154,7 @@ impl Meilisearch {
         let response = Client::new()
             .post(format!("{}/indexes/{}/settings", self.addr, self.index))
             .header("Content-Type", "application/json")
+            .header("X-Meili-API-Key", &self.key)
             .body(buffer)
             .send()?;
 
@@ -156,13 +167,17 @@ impl Meilisearch {
                 "{}/indexes/{}/updates/{}",
                 self.addr, self.index, uid
             ))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
 
     pub fn create_dump(&self, output: &mut dyn Write) -> Result<()> {
-        let response = Client::new().post(format!("{}/dumps", self.addr)).send()?;
+        let response = Client::new()
+            .post(format!("{}/dumps", self.addr))
+            .header("X-Meili-API-Key", &self.key)
+            .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
@@ -170,25 +185,35 @@ impl Meilisearch {
     pub fn dump_status(&self, output: &mut dyn Write, dump_id: DumpId) -> Result<()> {
         let response = Client::new()
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
+            .header("X-Meili-API-Key", &self.key)
             .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
 
     pub fn healthcheck(&self, output: &mut dyn Write) -> Result<()> {
-        let response = Client::new().get(format!("{}/health", self.addr)).send()?;
+        let response = Client::new()
+            .get(format!("{}/health", self.addr))
+            .header("X-Meili-API-Key", &self.key)
+            .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
 
     pub fn version(&self, output: &mut dyn Write) -> Result<()> {
-        let response = Client::new().get(format!("{}/version", self.addr)).send()?;
+        let response = Client::new()
+            .get(format!("{}/version", self.addr))
+            .header("X-Meili-API-Key", &self.key)
+            .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
 
     pub fn stats(&self, output: &mut dyn Write) -> Result<()> {
-        let response = Client::new().get(format!("{}/stats", self.addr)).send()?;
+        let response = Client::new()
+            .get(format!("{}/stats", self.addr))
+            .header("X-Meili-API-Key", &self.key)
+            .send()?;
         self.handle_response(output, response)?;
         Ok(())
     }
@@ -210,6 +235,7 @@ impl Meilisearch {
                         "{}/indexes/{}/updates/{}",
                         self.addr, self.index, uid
                     ))
+                    .header("X-Meili-API-Key", &self.key)
                     .send()?;
                 let json = response.json::<Value>()?;
                 match json["status"].as_str() {

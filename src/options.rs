@@ -21,6 +21,16 @@ pub struct Options {
     #[structopt(global = true, short, long, default_value = "mieli")]
     pub index: String,
 
+    /// Your secret API key https://docs.meilisearch.com/reference/api/keys.html#get-keys
+    #[structopt(
+        global = true,
+        short,
+        long,
+        default_value = "",
+        env = "MEILI_MASTER_KEY"
+    )]
+    pub key: String,
+
     /// Interval between each status check (in milliseconds)
     #[structopt(global = true, long, default_value = "200")]
     pub interval: usize,
