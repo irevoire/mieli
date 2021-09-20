@@ -92,7 +92,6 @@ pub enum Command {
     Stats,
     /// Do a search. You must pipe your parameter in the command as a json
     Search {
-        message: String,
         #[structopt(long)]
         all: bool,
     },
