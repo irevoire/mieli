@@ -21,7 +21,7 @@ pub struct Options {
     #[structopt(global = true, short, long, default_value = "mieli")]
     pub index: String,
 
-    /// Your secret API key https://docs.meilisearch.com/reference/api/keys.html#get-keys
+    /// Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
     #[structopt(
         global = true,
         short,
