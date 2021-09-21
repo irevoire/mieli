@@ -1,0 +1,39 @@
+name: Publish deb pkg to GitHub release & APT repository & Homebrew
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  debian:
+    name: Publish debian packagge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hecrj/setup-rust-action@master
+        with:
+          rust-version: stable
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+      - uses: actions/checkout@v2
+      - name: Build deb package
+        run: cargo deb -p mieli -o target/debian/mieli.deb
+      - name: Upload debian pkg to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/debian/mieli.deb
+          asset_name: mieli.deb
+          tag: ${{ github.ref }}
+      - name: Upload debian pkg to apt repository
+        run: curl -F package=@target/debian/mieli.deb https://${{ secrets.GEMFURY_PUSH_TOKEN }}@push.fury.io/mieli/
+
+  homebrew:
+    name: Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create PR to Homebrew
+        uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-name: mieli
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_COMMITTER_TOKEN }}
