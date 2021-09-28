@@ -47,7 +47,12 @@ cargo install mieli
 ### Add documents
 
 ```bash
-echo '[{ "id": 1, "content": "I love gaspacho" }]' | mieli -i cook add
+echo '[
+    { "id": 1,
+    "title": "Mieli search his honey pot",
+    "content": "Mieli, the fat brown bear, was looking for honey in this majestuous forest ..."
+    }
+]' | mieli -i cook add
 ```
 
 ### Search
@@ -56,6 +61,6 @@ echo '[{ "id": 1, "content": "I love gaspacho" }]' | mieli -i cook add
 # placeholder
 echo '{}' | mieli -i cook search
 # simple search with query
-echo '{ "q": "gaspacho" }' | mieli -i cook search
+echo '{ "q": "honey" }' | mieli -i cook search
 ```
 
