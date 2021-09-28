@@ -28,14 +28,8 @@ pub struct Options {
     pub index: String,
 
     /// Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
-    #[structopt(
-        global = true,
-        short,
-        long,
-        default_value = "",
-        env = "MEILI_MASTER_KEY"
-    )]
-    pub key: String,
+    #[structopt(global = true, short, long, env = "MEILI_MASTER_KEY")]
+    pub key: Option<String>,
 
     /// Use a specific http User-Agent for your request
     #[structopt(global = true, long)]
