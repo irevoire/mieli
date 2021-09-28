@@ -3,7 +3,7 @@
 ## Usage 🧸
 
 ```text
-mieli 0.1.8
+mieli 0.1.10
 A stupid wrapper around meilisearch
 
 USAGE:
@@ -14,12 +14,13 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -a, --addr <addr>            The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700) [env:
-                                 MEILI_ADDR=]  [default: http://localhost:7700]
-    -i, --index <index>          The name of the index [default: mieli]
-        --interval <interval>    Interval between each status check (in milliseconds) [default: 200]
-    -k, --key <key>              Your secret API key https://docs.meilisearch.com/reference/api/keys.html#get-keys [env:
-                                 MEILI_MASTER_KEY=]  [default: ]
+    -a, --addr <addr>                The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700) [env:
+                                     MEILI_ADDR=]  [default: http://localhost:7700]
+    -i, --index <index>              The name of the index [env: MIELI_INDEX=]  [default: mieli]
+        --interval <interval>        Interval between each status check (in milliseconds) [default: 200]
+    -k, --key <key>                  Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
+                                     [env: MEILI_MASTER_KEY=]
+        --user-agent <user-agent>    Use a specific http User-Agent for your request
 
 SUBCOMMANDS:
     add         Add documents with the `post` verb You can pipe your documents in the command
