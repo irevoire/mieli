@@ -37,6 +37,10 @@ pub struct Options {
     )]
     pub key: String,
 
+    /// Use a specific http User-Agent for your request
+    #[structopt(global = true, long)]
+    pub user_agent: Option<String>,
+
     /// Interval between each status check (in milliseconds)
     #[structopt(global = true, long, default_value = "200")]
     pub interval: usize,
