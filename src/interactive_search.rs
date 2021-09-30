@@ -7,13 +7,13 @@ use termion::{color, screen::AlternateScreen};
 use crate::meilisearch::Meilisearch;
 
 impl Meilisearch {
-    pub fn interactive_search(&self) -> Result<()> {
+    pub fn interactive_search(&self, search: String) -> Result<()> {
         let screen = AlternateScreen::from(stdout());
         let available_lines = termion::terminal_size().unwrap().1;
 
         Text::new("Search:")
             .with_suggester(&|input| self.search_suggestor(available_lines as usize, input))
-            .with_help_message("e.g. Avatar")
+            .with_placeholder(&search)
             .prompt()?;
 
         Ok(())

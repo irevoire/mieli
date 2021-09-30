@@ -14,7 +14,7 @@ use reqwest::{
     blocking::{Client, RequestBuilder, Response},
     header::USER_AGENT,
 };
-use serde_json::Value;
+use serde_json::{json, Map, Value};
 
 #[derive(Debug, Default)]
 pub struct Meilisearch {
@@ -163,17 +163,19 @@ impl Meilisearch {
         Ok(())
     }
 
-    pub fn search(&self) -> Result<()> {
-        if atty::is(atty::Stream::Stdin) {
-            self.interactive_search()?;
+    pub fn search(&self, search: String) -> Result<()> {
+        if atty::is(atty::Stream::Stdin) && atty::is(atty::Stream::Stdout) {
+            self.interactive_search(search)?;
         } else {
-            let mut buffer = Vec::new();
-            stdin().read_to_end(&mut buffer);
+            let mut value: Map<String, Value> = serde_json::from_reader(stdin())?;
+            if !search.is_empty() {
+                value.insert("q".to_string(), json!(search));
+            }
 
             let response = self
                 .post(format!("{}/indexes/{}/search", self.addr, self.index))
                 .header("Content-Type", "application/json")
-                .body(buffer)
+                .json(&value)
                 .send()?;
 
             self.handle_response(response)?;

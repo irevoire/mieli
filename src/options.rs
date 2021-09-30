@@ -104,10 +104,12 @@ pub enum Command {
     Version,
     /// Return the stats about the indexes
     Stats,
-    /// Do a search. You must pipe your parameter in the command as a json
+    /// Do a search. You can pipe your parameter in the command as a json.
+    /// Or you can specify directly what you want to search in the arguments.
     Search {
-        #[structopt(long)]
-        all: bool,
+        /// What you want to search. If nothing was piped in the command a simple request with only `q` will be ran.
+        /// If you piped some configuration the `q` parameter will be replaced.
+        search_terms: Vec<String>,
     },
     /// Update the settings. You must pipe your parameter in the command as a json.
     Settings {

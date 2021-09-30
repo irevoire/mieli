@@ -56,7 +56,7 @@ fn main() -> Result<()> {
                 ids => meili.delete_batch(ids)?,
             }
         }
-        Command::Search { all } => meili.search()?,
+        Command::Search { search_terms } => meili.search(search_terms.join(" "))?,
         Command::Settings { r#async } => meili.r#async(r#async).settings()?,
         Command::Dump {
             r#async,
