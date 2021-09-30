@@ -164,14 +164,18 @@ impl Meilisearch {
     }
 
     pub fn search(&self, search: String) -> Result<()> {
-        if atty::is(atty::Stream::Stdin) && atty::is(atty::Stream::Stdout) {
-            self.interactive_search(search)?;
+        let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
+            serde_json::from_reader(stdin())?
         } else {
-            let mut value: Map<String, Value> = serde_json::from_reader(stdin())?;
-            if !search.is_empty() {
-                value.insert("q".to_string(), json!(search));
-            }
+            Map::new()
+        };
+        if !search.is_empty() {
+            value.insert("q".to_string(), json!(search));
+        }
 
+        if atty::is(atty::Stream::Stdout) {
+            self.interactive_search(search, value)?;
+        } else {
             let response = self
                 .post(format!("{}/indexes/{}/search", self.addr, self.index))
                 .header("Content-Type", "application/json")
