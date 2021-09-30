@@ -20,6 +20,7 @@ impl Meilisearch {
                 self.search_suggestor(&base_search_config, available_lines as usize, input)
             })
             .with_placeholder(&base_search)
+            .with_initial_value(&base_search)
             .prompt()?;
 
         Ok(())
