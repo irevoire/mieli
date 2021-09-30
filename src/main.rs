@@ -3,6 +3,7 @@
 #![allow(unused_variables)]
 
 mod format;
+mod interactive_search;
 mod meilisearch;
 mod options;
 

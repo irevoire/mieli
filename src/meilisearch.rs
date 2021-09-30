@@ -18,12 +18,12 @@ use serde_json::Value;
 
 #[derive(Debug, Default)]
 pub struct Meilisearch {
-    addr: String,
-    index: String,
-    key: Option<String>,
-    interval: usize,
-    r#async: bool,
-    user_agent: String,
+    pub addr: String,
+    pub index: String,
+    pub key: Option<String>,
+    pub interval: usize,
+    pub r#async: bool,
+    pub user_agent: String,
 }
 
 impl From<&Options> for Meilisearch {
@@ -47,19 +47,19 @@ impl Meilisearch {
         Self { r#async, ..self }
     }
 
-    fn get(&self, url: impl AsRef<str>) -> RequestBuilder {
+    pub fn get(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.get(url.as_ref()))
     }
 
-    fn post(&self, url: impl AsRef<str>) -> RequestBuilder {
+    pub fn post(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.post(url.as_ref()))
     }
 
-    fn put(&self, url: impl AsRef<str>) -> RequestBuilder {
+    pub fn put(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.get(url.as_ref()))
     }
 
-    fn delete(&self, url: impl AsRef<str>) -> RequestBuilder {
+    pub fn delete(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.delete(url.as_ref()))
     }
 
@@ -164,16 +164,21 @@ impl Meilisearch {
     }
 
     pub fn search(&self) -> Result<()> {
-        let mut buffer = Vec::new();
-        stdin().read_to_end(&mut buffer);
+        if atty::is(atty::Stream::Stdin) {
+            self.interactive_search()?;
+        } else {
+            let mut buffer = Vec::new();
+            stdin().read_to_end(&mut buffer);
 
-        let response = self
-            .post(format!("{}/indexes/{}/search", self.addr, self.index))
-            .header("Content-Type", "application/json")
-            .body(buffer)
-            .send()?;
+            let response = self
+                .post(format!("{}/indexes/{}/search", self.addr, self.index))
+                .header("Content-Type", "application/json")
+                .body(buffer)
+                .send()?;
 
-        self.handle_response(response)
+            self.handle_response(response)?;
+        }
+        Ok(())
     }
 
     pub fn settings(&self) -> Result<()> {
