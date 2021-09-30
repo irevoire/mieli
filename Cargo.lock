@@ -424,6 +424,7 @@ name = "mieli"
 version = "0.1.10"
 dependencies = [
  "anyhow",
+ "atty",
  "colored_json",
  "indicatif",
  "reqwest",

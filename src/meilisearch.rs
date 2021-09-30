@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{stdin, Read, Write},
+    io::{stdin, Read},
     path::PathBuf,
 };
 
@@ -77,29 +77,28 @@ impl Meilisearch {
         }
     }
 
-    pub fn get_one_document(&self, output: &mut dyn Write, docid: DocId) -> Result<()> {
+    pub fn get_one_document(&self, docid: DocId) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn get_all_documents(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn get_all_documents(&self) -> Result<()> {
         // TODO: we should cycle to get ALL the documents
         let response = self
             .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
     pub fn index_documents(
         &self,
-        output: &mut dyn Write,
         filepath: Option<PathBuf>,
         content_type: String,
         reindex: bool,
@@ -129,30 +128,30 @@ impl Meilisearch {
                     .send()?
             }
         };
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn delete_all(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn delete_all(&self) -> Result<()> {
         let response = self
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn delete_one(&self, output: &mut dyn Write, docid: DocId) -> Result<()> {
+    pub fn delete_one(&self, docid: DocId) -> Result<()> {
         let response = self
             .delete(format!(
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn delete_batch(&self, output: &mut dyn Write, docids: &[DocId]) -> Result<()> {
+    pub fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
         let response = self
             .post(format!(
                 "{}/indexes/{}/documents/delete-batch",
@@ -160,11 +159,11 @@ impl Meilisearch {
             ))
             .json(docids)
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn search(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn search(&self) -> Result<()> {
         let mut buffer = Vec::new();
         stdin().read_to_end(&mut buffer);
 
@@ -174,10 +173,10 @@ impl Meilisearch {
             .body(buffer)
             .send()?;
 
-        self.handle_response(output, response)
+        self.handle_response(response)
     }
 
-    pub fn settings(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn settings(&self) -> Result<()> {
         let mut buffer = Vec::new();
         stdin().read_to_end(&mut buffer);
 
@@ -187,54 +186,54 @@ impl Meilisearch {
             .body(buffer)
             .send()?;
 
-        self.handle_response(output, response)
+        self.handle_response(response)
     }
 
-    pub fn status(&self, output: &mut dyn Write, uid: UpdateId) -> Result<()> {
+    pub fn status(&self, uid: UpdateId) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/updates/{}",
                 self.addr, self.index, uid
             ))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn create_dump(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn create_dump(&self) -> Result<()> {
         let response = self.post(format!("{}/dumps", self.addr)).send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn dump_status(&self, output: &mut dyn Write, dump_id: DumpId) -> Result<()> {
+    pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
         let response = self
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
             .send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn healthcheck(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn healthcheck(&self) -> Result<()> {
         let response = self.get(format!("{}/health", self.addr)).send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn version(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn version(&self) -> Result<()> {
         let response = self.get(format!("{}/version", self.addr)).send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn stats(&self, output: &mut dyn Write) -> Result<()> {
+    pub fn stats(&self) -> Result<()> {
         let response = self.get(format!("{}/stats", self.addr)).send()?;
-        self.handle_response(output, response)?;
+        self.handle_response(response)?;
         Ok(())
     }
 
-    pub fn handle_response(&self, output: &mut dyn Write, response: Response) -> Result<()> {
-        let response = write_response_full(output, response)?;
+    pub fn handle_response(&self, response: Response) -> Result<()> {
+        let response = write_response_full(response)?;
         if self.r#async {
             return Ok(());
         }
@@ -258,7 +257,7 @@ impl Meilisearch {
                     }
                     Some(msg @ "processed") | Some(msg @ "failed") => {
                         spinner.finish_with_message(msg.to_string());
-                        write_json(output, json);
+                        write_json(json);
                         break;
                     }
                     Some(status) => spinner.set_message(status.to_string()),

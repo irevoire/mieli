@@ -15,6 +15,7 @@ keywords = ["meilisearch", "cli", "search", "bears"]
 
 [dependencies]
 anyhow = "1.0.43"
+atty = "0.2"
 structopt = "0.3.22"
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "blocking", "json"] }
 termion = "1.5.6"
