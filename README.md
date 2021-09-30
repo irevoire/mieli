@@ -65,3 +65,4 @@ echo '{}' | mieli -i cook search
 echo '{ "q": "honey" }' | mieli -i cook search
 ```
 
+[![asciicast](https://asciinema.org/a/439266.svg)](https://asciinema.org/a/439266)
