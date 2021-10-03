@@ -60,9 +60,16 @@ echo '[
 
 ```bash
 # placeholder
-echo '{}' | mieli -i cook search
-# simple search with query
-echo '{ "q": "honey" }' | mieli -i cook search
+mieli -i book search
+# simple search
+mieli -i book search honey
+# complex search
+echo '{ "q": "honey", "limit": 1 }' | mieli -i book search
+```
+
+By default all search are interactive. But if you pipe the result of `mieli` into another command then the search results are sent immediatly.
+```bash
+mieli -i book search honey | jq '.content'
 ```
 
 [![asciicast](https://asciinema.org/a/439266.svg)](https://asciinema.org/a/439266)
