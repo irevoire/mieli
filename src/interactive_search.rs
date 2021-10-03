@@ -13,7 +13,7 @@ impl Meilisearch {
         base_search_config: Map<String, Value>,
     ) -> Result<()> {
         let screen = AlternateScreen::from(stdout());
-        let available_lines = termion::terminal_size().unwrap().1;
+        let available_lines = termion::terminal_size().expect("Unsupported terminal").1;
 
         Text::new("Search:")
             .with_suggester(&move |input| {
@@ -43,25 +43,42 @@ impl Meilisearch {
             .post(format!("{}/indexes/{}/search", self.addr, self.index))
             .header("Content-Type", "application/json")
             .json(&search)
-            .send()
-            .unwrap();
-        response.json::<Value>().unwrap()["hits"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|value| value.get("_formatted").unwrap())
-            .map(|value| colored_json::to_colored_json_auto(value).unwrap())
-            .map(|s| s.replace("<em>", &color::Fg(color::Red).to_string()))
-            .map(|s| s.replace("</em>", &color::Fg(color::Green).to_string()))
-            .scan(0, |line, value| {
-                *line += value.lines().count() + 1;
-                if *line > available_lines {
-                    None
-                } else {
-                    Some(value)
-                }
-            })
-            .fuse()
-            .collect()
+            .send();
+        let response = match response {
+            Err(e) => {
+                return vec![
+                    "Cannot connect to Meilisearch:".to_string(),
+                    format!(
+                        "\t{}{}{}",
+                        color::Fg(color::Red),
+                        e.to_string(),
+                        color::Fg(color::Reset)
+                    ),
+                ]
+            }
+            Ok(response) => response,
+        };
+        if response.status().is_success() {
+            response.json::<Value>().unwrap()["hits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.get("_formatted").unwrap())
+                .map(|value| colored_json::to_colored_json_auto(value).unwrap())
+                .map(|s| s.replace("<em>", &color::Fg(color::Red).to_string()))
+                .map(|s| s.replace("</em>", &color::Fg(color::Green).to_string()))
+                .scan(0, |line, value| {
+                    *line += value.lines().count() + 1;
+                    if *line > available_lines {
+                        None
+                    } else {
+                        Some(value)
+                    }
+                })
+                .fuse()
+                .collect()
+        } else {
+            vec![colored_json::to_colored_json_auto(&response.json::<Value>().unwrap()).unwrap()]
+        }
     }
 }
