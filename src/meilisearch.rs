@@ -188,14 +188,18 @@ impl Meilisearch {
     }
 
     pub fn settings(&self) -> Result<()> {
-        let mut buffer = Vec::new();
-        stdin().read_to_end(&mut buffer);
+        let response = if atty::is(atty::Stream::Stdin) {
+            self.get(format!("{}/indexes/{}/settings", self.addr, self.index))
+                .send()?
+        } else {
+            let mut buffer = Vec::new();
+            stdin().read_to_end(&mut buffer);
 
-        let response = self
-            .post(format!("{}/indexes/{}/settings", self.addr, self.index))
-            .header("Content-Type", "application/json")
-            .body(buffer)
-            .send()?;
+            self.post(format!("{}/indexes/{}/settings", self.addr, self.index))
+                .header("Content-Type", "application/json")
+                .body(buffer)
+                .send()?
+        };
 
         self.handle_response(response)
     }

@@ -111,9 +111,10 @@ pub enum Command {
         /// If you piped some configuration the `q` parameter will be replaced.
         search_terms: Vec<String>,
     },
-    /// Update the settings. You must pipe your parameter in the command as a json.
+    /// Get or update the settings.
+    /// You can pipe your settings in the command.
     Settings {
-        /// The command will exit immediatly after asking for a dump
+        /// The command will exit immediatly after sending the new settings
         #[structopt(long)]
         r#async: bool,
     },
