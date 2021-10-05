@@ -90,10 +90,10 @@ pub enum Command {
         /// The dump you want info from
         dump_id: Option<String>,
     },
-    /// Return the status of an update
+    /// Return the status updates
     Status {
-        /// The update id
-        update_id: UpdateId,
+        /// The update id you want the status of
+        update_id: Option<UpdateId>,
         /// If the flag is set, the command will wait until the update finishes
         #[structopt(short, long)]
         watch: bool,

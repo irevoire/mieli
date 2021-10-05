@@ -204,11 +204,13 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn status(&self, uid: UpdateId) -> Result<()> {
+    pub fn status(&self, uid: Option<UpdateId>) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/updates/{}",
-                self.addr, self.index, uid
+                self.addr,
+                self.index,
+                uid.map_or("".to_string(), |uid| uid.to_string())
             ))
             .send()?;
         self.handle_response(response)?;
