@@ -172,19 +172,30 @@ impl Meilisearch {
         if !search.is_empty() {
             value.insert("q".to_string(), json!(search));
         }
+        let response = self
+            .post(format!("{}/indexes/{}/search", self.addr, self.index))
+            .header("Content-Type", "application/json")
+            .json(&value)
+            .send()?;
 
-        if atty::is(atty::Stream::Stdout) {
-            self.interactive_search(search, value)?;
-        } else {
-            let response = self
-                .post(format!("{}/indexes/{}/search", self.addr, self.index))
-                .header("Content-Type", "application/json")
-                .json(&value)
-                .send()?;
+        self.handle_response(response)
+    }
 
-            self.handle_response(response)?;
+    pub fn interactive_search(&self, search: String) -> Result<()> {
+        if atty::isnt(atty::Stream::Stdout) {
+            return self.search(search);
         }
-        Ok(())
+
+        let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
+            serde_json::from_reader(stdin())?
+        } else {
+            Map::new()
+        };
+        if !search.is_empty() {
+            value.insert("q".to_string(), json!(search));
+        }
+
+        self.run_interactive_search(search, value)
     }
 
     pub fn settings(&self) -> Result<()> {
