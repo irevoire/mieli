@@ -7,7 +7,7 @@ use termion::{color, screen::AlternateScreen};
 use crate::meilisearch::Meilisearch;
 
 impl Meilisearch {
-    pub fn interactive_search(
+    pub fn run_interactive_search(
         &self,
         base_search: String,
         base_search_config: Map<String, Value>,

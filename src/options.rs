@@ -108,8 +108,12 @@ pub enum Command {
     /// Or you can specify directly what you want to search in the arguments.
     Search {
         /// What you want to search. If nothing was piped in the command a simple request with only `q` will be ran.
-        /// If you piped some configuration the `q` parameter will be replaced.
+        /// If you piped some configuration the `q` parameter will be replaced with the one specified in the arguments.
         search_terms: Vec<String>,
+
+        /// If you want to use the interactive search. It's a beta feature
+        #[structopt(long)]
+        interactive: bool,
     },
     /// Get or update the settings.
     /// You can pipe your settings in the command.
