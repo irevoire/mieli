@@ -85,8 +85,7 @@ impl Meilisearch {
                 self.addr, self.index, docid
             ))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn get_all_documents(&self) -> Result<()> {
@@ -94,8 +93,7 @@ impl Meilisearch {
         let response = self
             .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn index_documents(
@@ -129,16 +127,14 @@ impl Meilisearch {
                     .send()?
             }
         };
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn delete_all(&self) -> Result<()> {
         let response = self
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn delete_one(&self, docid: DocId) -> Result<()> {
@@ -148,8 +144,7 @@ impl Meilisearch {
                 self.addr, self.index, docid
             ))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
@@ -160,8 +155,7 @@ impl Meilisearch {
             ))
             .json(docids)
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn search(&self, search: String) -> Result<()> {
@@ -274,40 +268,34 @@ impl Meilisearch {
                 uid.map_or("".to_string(), |uid| uid.to_string())
             ))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn create_dump(&self) -> Result<()> {
         let response = self.post(format!("{}/dumps", self.addr)).send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
         let response = self
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
             .send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn healthcheck(&self) -> Result<()> {
         let response = self.get(format!("{}/health", self.addr)).send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn version(&self) -> Result<()> {
         let response = self.get(format!("{}/version", self.addr)).send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn stats(&self) -> Result<()> {
         let response = self.get(format!("{}/stats", self.addr)).send()?;
-        self.handle_response(response)?;
-        Ok(())
+        self.handle_response(response)
     }
 
     pub fn handle_response(&self, response: Response) -> Result<()> {
