@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    format::{write_json, write_response_full},
+    format::{write_json, write_response_full, write_response_headers},
     DocId, DumpId, Options, UpdateId,
 };
 use anyhow::Result;
@@ -13,6 +13,7 @@ use indicatif::ProgressBar;
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
     header::USER_AGENT,
+    StatusCode,
 };
 use serde_json::{json, Map, Value};
 
@@ -56,7 +57,7 @@ impl Meilisearch {
     }
 
     pub fn put(&self, url: impl AsRef<str>) -> RequestBuilder {
-        self.request(|c| c.get(url.as_ref()))
+        self.request(|c| c.put(url.as_ref()))
     }
 
     pub fn delete(&self, url: impl AsRef<str>) -> RequestBuilder {
@@ -215,6 +216,55 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
+    pub fn get_all_indexes(&self) -> Result<()> {
+        let response = self.get(format!("{}/indexes", self.addr)).send()?;
+        self.handle_response(response)
+    }
+
+    pub fn get_index(&self, index: Option<String>) -> Result<()> {
+        let index = index.unwrap_or(self.index.to_string());
+        let response = self
+            .get(format!("{}/indexes/{}", self.addr, index))
+            .send()?;
+        self.handle_response(response)
+    }
+
+    pub fn create_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
+        let index = index.unwrap_or(self.index.to_string());
+        let mut body = json!({ "uid": index });
+        if let Some(primary_key) = primary_key {
+            body["primaryKey"] = json!(primary_key);
+        }
+        let response = self
+            .post(format!("{}/indexes", self.addr))
+            .json(&body)
+            .send()?;
+        self.handle_response(response)
+    }
+
+    pub fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
+        let index = index.unwrap_or(self.index.to_string());
+        let mut body = json!({});
+        dbg!(&primary_key);
+        if let Some(primary_key) = primary_key {
+            body["primaryKey"] = json!(primary_key);
+        }
+        dbg!(&body);
+        let response = self
+            .put(format!("{}/indexes/{}", self.addr, index))
+            .json(&body)
+            .send()?;
+        self.handle_response(response)
+    }
+
+    pub fn delete_index(&self, index: Option<String>) -> Result<()> {
+        let index = index.unwrap_or(self.index.to_string());
+        let response = self
+            .delete(format!("{}/indexes/{}", self.addr, index))
+            .send()?;
+        self.handle_response(response)
+    }
+
     pub fn status(&self, uid: Option<UpdateId>) -> Result<()> {
         let response = self
             .get(format!(
@@ -261,6 +311,9 @@ impl Meilisearch {
     }
 
     pub fn handle_response(&self, response: Response) -> Result<()> {
+        if response.status() == StatusCode::NO_CONTENT {
+            return write_response_headers(&response);
+        }
         let response = write_response_full(response)?;
         if self.r#async {
             return Ok(());

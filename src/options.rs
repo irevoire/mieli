@@ -122,4 +122,45 @@ pub enum Command {
         #[structopt(long)]
         r#async: bool,
     },
+    /// Manipulate indexes, add `--help` to see all the subcommands.
+    Index {
+        #[structopt(subcommand)]
+        command: IndexesCommand,
+    },
+}
+
+#[derive(Debug, StructOpt)]
+pub enum IndexesCommand {
+    /// List all indexes.
+    All,
+    /// Get an index, by default use the index provided by `-i`.
+    Get {
+        /// The index you want to retrieve.
+        #[structopt(name = "idx")]
+        index: Option<String>,
+    },
+    /// Create an index, by default use the index provided by `-i`.
+    Create {
+        /// The index you want to create.
+        #[structopt(name = "idx")]
+        index: Option<String>,
+        /// Primary key
+        #[structopt(short, long)]
+        primary: Option<String>,
+    },
+    /// Update an index, by default use the index provided by `-i`.
+    Update {
+        /// The index you want to update.
+        #[structopt(name = "idx")]
+        index: Option<String>,
+        /// Primary key
+        #[structopt(short, long)]
+        primary: Option<String>,
+    },
+    /// Delete an index, by default use the index provided by `-i`.
+    Delete {
+        /// The index you want to delete.
+        #[structopt(name = "idx")]
+        index: Option<String>,
+    },
 }
