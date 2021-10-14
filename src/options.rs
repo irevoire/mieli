@@ -7,6 +7,10 @@ use crate::{DocId, UpdateId};
 #[derive(Debug, StructOpt)]
 #[structopt(about = "A stupid wrapper around meilisearch")]
 pub struct Options {
+    /// Verbose mode (-v, -vv, etc)
+    #[structopt(global = true, short, parse(from_occurrences))]
+    pub verbose: usize,
+
     /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
     #[structopt(
         global = true,
