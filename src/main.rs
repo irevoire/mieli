@@ -12,7 +12,7 @@ use options::{Command, Options};
 
 use structopt::StructOpt;
 
-use crate::meilisearch::Meilisearch;
+use crate::{meilisearch::Meilisearch, options::IndexesCommand};
 
 type DocId = u32;
 type UpdateId = u32;
@@ -65,6 +65,13 @@ fn main() -> Result<()> {
             interactive: true,
         } => meili.interactive_search(search_terms.join(" "))?,
         Command::Settings { r#async } => meili.r#async(r#async).settings()?,
+        Command::Index { command } => match command {
+            IndexesCommand::All => meili.get_all_indexes()?,
+            IndexesCommand::Get { index } => meili.get_index(index)?,
+            IndexesCommand::Create { index, primary } => meili.create_index(index, primary)?,
+            IndexesCommand::Update { index, primary } => meili.update_index(index, primary)?,
+            IndexesCommand::Delete { index } => meili.delete_index(index)?,
+        },
         Command::Dump {
             r#async,
             dump_id: None,
