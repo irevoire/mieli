@@ -25,6 +25,7 @@ pub struct Meilisearch {
     pub interval: usize,
     pub r#async: bool,
     pub user_agent: String,
+    pub verbose: usize,
 }
 
 impl From<&Options> for Meilisearch {
@@ -39,6 +40,7 @@ impl From<&Options> for Meilisearch {
                 .user_agent
                 .clone()
                 .unwrap_or_else(|| format!("mieli/{}", env!("CARGO_PKG_VERSION"))),
+            verbose: options.verbose,
         }
     }
 }
@@ -300,9 +302,9 @@ impl Meilisearch {
 
     pub fn handle_response(&self, response: Response) -> Result<()> {
         if response.status() == StatusCode::NO_CONTENT {
-            return write_response_headers(&response);
+            return write_response_headers(&response, self.verbose);
         }
-        let response = write_response_full(response)?;
+        let response = write_response_full(response, self.verbose)?;
         if self.r#async {
             return Ok(());
         }
