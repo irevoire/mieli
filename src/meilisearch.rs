@@ -12,7 +12,7 @@ use anyhow::Result;
 use indicatif::ProgressBar;
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
-    header::USER_AGENT,
+    header::{AUTHORIZATION, USER_AGENT},
     StatusCode,
 };
 use serde_json::{json, Map, Value};
@@ -74,6 +74,7 @@ impl Meilisearch {
         if let Some(ref key) = self.key {
             req_builder
                 .header("X-Meili-API-Key", key)
+                .header(AUTHORIZATION, &format!("Bearer {}", key))
                 .header(USER_AGENT, &self.user_agent)
         } else {
             req_builder.header(USER_AGENT, &self.user_agent)
