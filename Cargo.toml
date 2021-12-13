@@ -1,7 +1,7 @@
 [package]
 name = "mieli"
-version = "0.1.13"
-edition = "2018"
+version = "0.24.0"
+edition = "2021"
 description = "A cli around Meilisearch"
 readme = "README.md"
 homepage = "https://meilisearch.com/"
