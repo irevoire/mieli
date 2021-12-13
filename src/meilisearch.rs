@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
-    DocId, DumpId, Options, UpdateId,
+    DocId, DumpId, Options, TaskId, UpdateId,
 };
 use anyhow::Result;
 use indicatif::ProgressBar;
@@ -274,6 +274,18 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
+    pub fn task(&self, tid: Option<TaskId>) -> Result<()> {
+        let response = self
+            .get(format!(
+                "{}/indexes/{}/tasks/{}",
+                self.addr,
+                self.index,
+                tid.map_or("".to_string(), |uid| uid.to_string())
+            ))
+            .send()?;
+        self.handle_response(response)
+    }
+
     pub fn create_dump(&self) -> Result<()> {
         let response = self.post(format!("{}/dumps", self.addr)).send()?;
         self.handle_response(response)
@@ -314,7 +326,24 @@ impl Meilisearch {
 
         let buffer = String::new();
 
-        if let Some(uid) = response["updateId"].as_i64() {
+        if let Some(uid) = response["uid"].as_i64() {
+            loop {
+                let response = self.get(format!("{}/tasks/{}", self.addr, uid)).send()?;
+                let json = response.json::<Value>()?;
+                match json["status"].as_str() {
+                    None => {
+                        return Ok(());
+                    }
+                    Some(msg @ "succeeded") | Some(msg @ "failed") => {
+                        spinner.finish_with_message(msg.to_string());
+                        write_json(json);
+                        break;
+                    }
+                    Some(status) => spinner.set_message(status.to_string()),
+                }
+                std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
+            }
+        } else if let Some(uid) = response["updateId"].as_i64() {
             loop {
                 let response = self
                     .get(format!(

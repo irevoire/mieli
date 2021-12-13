@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::*;
 
-use crate::{DocId, UpdateId};
+use crate::{DocId, TaskId, UpdateId};
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "A stupid wrapper around meilisearch")]
@@ -98,6 +98,14 @@ pub enum Command {
     Status {
         /// The update id you want the status of
         update_id: Option<UpdateId>,
+        /// If the flag is set, the command will wait until the update finishes
+        #[structopt(short, long)]
+        watch: bool,
+    },
+    /// Get information about the tasks.
+    Task {
+        /// The task you want to inspect.
+        task_id: Option<TaskId>,
         /// If the flag is set, the command will wait until the update finishes
         #[structopt(short, long)]
         watch: bool,

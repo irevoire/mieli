@@ -16,6 +16,7 @@ use crate::{meilisearch::Meilisearch, options::IndexesCommand};
 
 type DocId = u32;
 type UpdateId = u32;
+type TaskId = u32;
 type DumpId = String;
 
 fn main() -> Result<()> {
@@ -84,6 +85,7 @@ fn main() -> Result<()> {
         Command::Version => meili.version()?,
         Command::Stats => meili.stats()?,
         Command::Status { update_id, watch } => meili.r#async(!watch).status(update_id)?,
+        Command::Task { task_id, watch } => meili.r#async(!watch).task(task_id)?,
     }
 
     Ok(())
