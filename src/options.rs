@@ -113,8 +113,10 @@ pub enum Command {
     /// Do an healthcheck
     Health,
     /// Return the version of the running meilisearch instance
+    #[structopt(aliases = &["ver"])]
     Version,
     /// Return the stats about the indexes
+    #[structopt(aliases = &["stat"])]
     Stats,
     /// Do a search. You can pipe your parameter in the command as a json.
     /// Or you can specify directly what you want to search in the arguments.
@@ -129,12 +131,14 @@ pub enum Command {
     },
     /// Get or update the settings.
     /// You can pipe your settings in the command.
+    #[structopt(aliases = &["set", "setting"])]
     Settings {
         /// The command will exit immediatly after sending the new settings
         #[structopt(long)]
         r#async: bool,
     },
     /// Manipulate indexes, add `--help` to see all the subcommands.
+    #[structopt(aliases = &["indexes"])]
     Index {
         #[structopt(subcommand)]
         command: IndexesCommand,
