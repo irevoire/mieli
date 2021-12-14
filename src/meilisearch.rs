@@ -242,11 +242,9 @@ impl Meilisearch {
     pub fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
         let index = index.unwrap_or(self.index.to_string());
         let mut body = json!({});
-        dbg!(&primary_key);
         if let Some(primary_key) = primary_key {
             body["primaryKey"] = json!(primary_key);
         }
-        dbg!(&body);
         let response = self
             .put(format!("{}/indexes/{}", self.addr, index))
             .json(&body)

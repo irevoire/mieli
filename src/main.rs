@@ -69,9 +69,19 @@ fn main() -> Result<()> {
         Command::Index { command } => match command {
             IndexesCommand::All => meili.get_all_indexes()?,
             IndexesCommand::Get { index } => meili.get_index(index)?,
-            IndexesCommand::Create { index, primary } => meili.create_index(index, primary)?,
-            IndexesCommand::Update { index, primary } => meili.update_index(index, primary)?,
-            IndexesCommand::Delete { index } => meili.delete_index(index)?,
+            IndexesCommand::Create {
+                index,
+                primary,
+                r#async,
+            } => meili.r#async(r#async).create_index(index, primary)?,
+            IndexesCommand::Update {
+                index,
+                primary,
+                r#async,
+            } => meili.r#async(r#async).update_index(index, primary)?,
+            IndexesCommand::Delete { index, r#async } => {
+                meili.r#async(r#async).delete_index(index)?
+            }
         },
         Command::Dump {
             r#async,

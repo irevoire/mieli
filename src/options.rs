@@ -171,6 +171,9 @@ pub enum IndexesCommand {
         /// Primary key
         #[structopt(short, long)]
         primary: Option<String>,
+        /// The command will exit immediatly after asking for a dump
+        #[structopt(long)]
+        r#async: bool,
     },
     /// Update an index, by default use the index provided by `-i`.
     Update {
@@ -180,11 +183,17 @@ pub enum IndexesCommand {
         /// Primary key
         #[structopt(short, long)]
         primary: Option<String>,
+        /// The command will exit immediatly after asking for a dump
+        #[structopt(long)]
+        r#async: bool,
     },
     /// Delete an index, by default use the index provided by `-i`.
     Delete {
         /// The index you want to delete.
         #[structopt(name = "idx")]
         index: Option<String>,
+        /// The command will exit immediatly after asking for a dump
+        #[structopt(long)]
+        r#async: bool,
     },
 }
