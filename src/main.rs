@@ -85,7 +85,16 @@ fn main() -> Result<()> {
         Command::Version => meili.version()?,
         Command::Stats => meili.stats()?,
         Command::Status { update_id, watch } => meili.r#async(!watch).status(update_id)?,
-        Command::Task { task_id, watch } => meili.r#async(!watch).task(task_id)?,
+        Command::Task {
+            task_id,
+            watch,
+            all: true,
+        } => meili.r#async(!watch).global_task(task_id)?,
+        Command::Task {
+            task_id,
+            watch,
+            all: false,
+        } => meili.r#async(!watch).task_by_index(task_id)?,
         Command::Key => meili.keys()?,
     }
 

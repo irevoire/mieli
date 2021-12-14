@@ -274,12 +274,23 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn task(&self, tid: Option<TaskId>) -> Result<()> {
+    pub fn task_by_index(&self, tid: Option<TaskId>) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/tasks/{}",
                 self.addr,
                 self.index,
+                tid.map_or("".to_string(), |uid| uid.to_string())
+            ))
+            .send()?;
+        self.handle_response(response)
+    }
+
+    pub fn global_task(&self, tid: Option<TaskId>) -> Result<()> {
+        let response = self
+            .get(format!(
+                "{}/tasks/{}",
+                self.addr,
                 tid.map_or("".to_string(), |uid| uid.to_string())
             ))
             .send()?;
