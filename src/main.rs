@@ -86,6 +86,7 @@ fn main() -> Result<()> {
         Command::Stats => meili.stats()?,
         Command::Status { update_id, watch } => meili.r#async(!watch).status(update_id)?,
         Command::Task { task_id, watch } => meili.r#async(!watch).task(task_id)?,
+        Command::Key => meili.keys()?,
     }
 
     Ok(())

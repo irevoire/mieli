@@ -313,6 +313,11 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
+    pub fn keys(&self) -> Result<()> {
+        let response = self.get(format!("{}/keys", self.addr)).send()?;
+        self.handle_response(response)
+    }
+
     pub fn handle_response(&self, response: Response) -> Result<()> {
         if response.status() == StatusCode::NO_CONTENT {
             return write_response_headers(&response, self.verbose);

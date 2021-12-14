@@ -143,6 +143,9 @@ pub enum Command {
         #[structopt(subcommand)]
         command: IndexesCommand,
     },
+    /// Get the keys
+    #[structopt(aliases = &["keys"])]
+    Key,
 }
 
 #[derive(Debug, StructOpt)]
