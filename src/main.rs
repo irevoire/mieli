@@ -31,20 +31,22 @@ fn main() -> Result<()> {
         Command::Add {
             content_type,
             file,
+            primary,
             r#async,
         } => {
             meili
                 .r#async(r#async)
-                .index_documents(file, content_type, false)?;
+                .index_documents(file, primary, content_type, false)?;
         }
         Command::Update {
             content_type,
             file,
+            primary,
             r#async,
         } => {
             meili
                 .r#async(r#async)
-                .index_documents(file, content_type, true)?;
+                .index_documents(file, primary, content_type, true)?;
         }
         Command::Delete {
             document_ids,

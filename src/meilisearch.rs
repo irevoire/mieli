@@ -12,7 +12,7 @@ use anyhow::Result;
 use indicatif::ProgressBar;
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
-    header::{AUTHORIZATION, USER_AGENT},
+    header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
     StatusCode,
 };
 use serde_json::{json, Map, Value};
@@ -102,6 +102,7 @@ impl Meilisearch {
     pub fn index_documents(
         &self,
         filepath: Option<PathBuf>,
+        primary_key: Option<String>,
         content_type: String,
         reindex: bool,
     ) -> Result<()> {
@@ -110,24 +111,24 @@ impl Meilisearch {
             false => self.post(url),
             true => self.put(url),
         };
+        let client = client.header(CONTENT_TYPE, content_type);
+        let client = if let Some(primary_key) = primary_key {
+            client.query(&[("primaryKey", primary_key)])
+        } else {
+            client
+        };
 
         let response = match filepath {
             Some(filepath) => {
                 let file = File::open(filepath)?;
-                client
-                    .header("Content-Type", content_type)
-                    .body(file)
-                    .send()?
+                client.body(file).send()?
             }
             None => {
                 // TODO: is this the only way to do it?
                 let mut buffer = Vec::new();
                 stdin().read_to_end(&mut buffer);
 
-                client
-                    .header("Content-Type", content_type)
-                    .body(buffer)
-                    .send()?
+                client.body(buffer).send()?
             }
         };
         self.handle_response(response)

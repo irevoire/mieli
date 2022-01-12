@@ -63,6 +63,9 @@ pub enum Command {
         /// The command will exit immediatly after sending the documents
         #[structopt(long)]
         r#async: bool,
+        /// The primary key
+        #[structopt(short, long)]
+        primary: Option<String>,
         /// The file you want to send
         file: Option<PathBuf>,
     },
@@ -75,6 +78,9 @@ pub enum Command {
         /// The command will exit immediatly after sending the documents
         #[structopt(long)]
         r#async: bool,
+        /// The primary key
+        #[structopt(short, long)]
+        primary: Option<String>,
         /// The file you want to send
         file: Option<PathBuf>,
     },
