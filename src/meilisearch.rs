@@ -47,7 +47,11 @@ impl From<&Options> for Meilisearch {
 
 impl Meilisearch {
     pub fn r#async(self, r#async: bool) -> Self {
-        Self { r#async, ..self }
+        // we stay in async mode if the command is being piped
+        Self {
+            r#async: r#async || atty::isnt(atty::Stream::Stdout),
+            ..self
+        }
     }
 
     pub fn get(&self, url: impl AsRef<str>) -> RequestBuilder {
