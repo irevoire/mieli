@@ -51,7 +51,7 @@ impl Meilisearch {
                     format!(
                         "\t{}{}{}",
                         color::Fg(color::Red),
-                        e.to_string(),
+                        e,
                         color::Fg(color::Reset)
                     ),
                 ]

@@ -220,7 +220,7 @@ impl Meilisearch {
     }
 
     pub fn get_index(&self, index: Option<String>) -> Result<()> {
-        let index = index.unwrap_or(self.index.to_string());
+        let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .get(format!("{}/indexes/{}", self.addr, index))
             .send()?;
@@ -228,7 +228,7 @@ impl Meilisearch {
     }
 
     pub fn create_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
-        let index = index.unwrap_or(self.index.to_string());
+        let index = index.unwrap_or_else(|| self.index.to_string());
         let mut body = json!({ "uid": index });
         if let Some(primary_key) = primary_key {
             body["primaryKey"] = json!(primary_key);
@@ -241,7 +241,7 @@ impl Meilisearch {
     }
 
     pub fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
-        let index = index.unwrap_or(self.index.to_string());
+        let index = index.unwrap_or_else(|| self.index.to_string());
         let mut body = json!({});
         if let Some(primary_key) = primary_key {
             body["primaryKey"] = json!(primary_key);
@@ -254,7 +254,7 @@ impl Meilisearch {
     }
 
     pub fn delete_index(&self, index: Option<String>) -> Result<()> {
-        let index = index.unwrap_or(self.index.to_string());
+        let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .delete(format!("{}/indexes/{}", self.addr, index))
             .send()?;
