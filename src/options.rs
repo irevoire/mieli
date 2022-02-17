@@ -156,13 +156,17 @@ pub enum Command {
     },
     /// Get the keys
     #[structopt(aliases = &["keys"])]
-    Key,
+    Key {
+        #[structopt(subcommand)]
+        command: KeyCommand,
+    },
 }
 
 #[derive(Debug, StructOpt)]
 pub enum IndexesCommand {
     /// List all indexes.
-    All,
+    #[structopt(aliases = &["all"])]
+    List,
     /// Get an index, by default use the index provided by `-i`.
     Get {
         /// The index you want to retrieve.
@@ -202,4 +206,33 @@ pub enum IndexesCommand {
         #[structopt(long)]
         r#async: bool,
     },
+}
+
+#[derive(Debug, StructOpt)]
+pub enum KeyCommand {
+    /// List all keys.
+    #[structopt(aliases = &["all"])]
+    List,
+    /// Get a key, by default use the key provided by `-k`.
+    Get {
+        /// The key you want to retrieve.
+        k: Option<String>,
+    },
+    /// Create a key. The json needs to be piped in the command.
+    #[structopt(aliases = &["post"])]
+    Create,
+    /// Update a key. The json needs to be piped in the command.
+    #[structopt(aliases = &["patch"])]
+    Update {
+        /// The key you want to update. If you don't provide
+        /// it here you need to send it in the json.
+        k: Option<String>,
+    },
+    /// Delete a key.
+    Delete {
+        /// The key you want to delete.
+        k: String,
+    },
+    /// Show an example of a valid json you can send to create a key.
+    Template,
 }
