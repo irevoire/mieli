@@ -8,7 +8,7 @@ mod meilisearch;
 mod options;
 
 use anyhow::Result;
-use options::{Command, Options};
+use options::{Command, KeyCommand, Options};
 
 use structopt::StructOpt;
 
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
         } => meili.interactive_search(search_terms.join(" "))?,
         Command::Settings { r#async } => meili.r#async(r#async).settings()?,
         Command::Index { command } => match command {
-            IndexesCommand::All => meili.get_all_indexes()?,
+            IndexesCommand::List => meili.get_all_indexes()?,
             IndexesCommand::Get { index } => meili.get_index(index)?,
             IndexesCommand::Create {
                 index,
@@ -107,7 +107,14 @@ fn main() -> Result<()> {
             watch,
             all: false,
         } => meili.r#async(!watch).task_by_index(task_id)?,
-        Command::Key => meili.keys()?,
+        Command::Key { command } => match command {
+            KeyCommand::List => meili.get_keys()?,
+            KeyCommand::Get { k } => meili.get_key(k)?,
+            KeyCommand::Create => meili.create_key()?,
+            KeyCommand::Update { k } => meili.update_key(k)?,
+            KeyCommand::Delete { k } => meili.delete_key(k)?,
+            KeyCommand::Template => meili.template()?,
+        },
     }
 
     Ok(())

@@ -8,7 +8,7 @@ use crate::{
     format::{write_json, write_response_full, write_response_headers},
     DocId, DumpId, Options, TaskId, UpdateId,
 };
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
@@ -64,6 +64,10 @@ impl Meilisearch {
 
     pub fn put(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.put(url.as_ref()))
+    }
+
+    pub fn patch(&self, url: impl AsRef<str>) -> RequestBuilder {
+        self.request(|c| c.patch(url.as_ref()))
     }
 
     pub fn delete(&self, url: impl AsRef<str>) -> RequestBuilder {
@@ -327,9 +331,63 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn keys(&self) -> Result<()> {
+    pub fn get_keys(&self) -> Result<()> {
         let response = self.get(format!("{}/keys", self.addr)).send()?;
         self.handle_response(response)
+    }
+
+    pub fn get_key(&self, key: Option<String>) -> Result<()> {
+        if let Some(key) = key.or_else(|| self.key.clone()) {
+            let response = self.get(format!("{}/keys/{}", self.addr, key)).send()?;
+            self.handle_response(response)
+        } else {
+            bail!("No key to retrieve")
+        }
+    }
+
+    pub fn create_key(&self) -> Result<()> {
+        if atty::isnt(atty::Stream::Stdin) {
+            let value: Map<String, Value> = serde_json::from_reader(stdin())?;
+            let response = self
+                .post(format!("{}/keys", self.addr))
+                .json(&value)
+                .send()?;
+            self.handle_response(response)
+        } else {
+            bail!("You need to send a key. See `mieli template`.")
+        }
+    }
+
+    pub fn update_key(&self, key: Option<String>) -> Result<()> {
+        if atty::isnt(atty::Stream::Stdin) {
+            let value: Map<String, Value> = serde_json::from_reader(stdin())?;
+            let key = key.as_deref().or(value["key"].as_str()).ok_or(anyhow!(
+                "You need to provide a key either in the json or as an argument"
+            ))?;
+            let response = self
+                .patch(format!("{}/keys/{}", self.addr, key))
+                .json(&value)
+                .send()?;
+            self.handle_response(response)
+        } else {
+            bail!("You need to send a key. See `mieli template`.")
+        }
+    }
+
+    pub fn delete_key(&self, key: String) -> Result<()> {
+        let response = self.delete(format!("{}/keys/{}", self.addr, key)).send()?;
+        self.handle_response(response)
+    }
+
+    pub fn template(&self) -> Result<()> {
+        let json = json!({
+          "description": "Add documents key",
+          "actions": ["documents.add"],
+          "indexes": ["mieli"],
+          "expiresAt": "2021-11-13T00:00:00Z"
+        });
+        println!("{}", colored_json::to_colored_json_auto(&json)?);
+        Ok(())
     }
 
     pub fn handle_response(&self, response: Response) -> Result<()> {
