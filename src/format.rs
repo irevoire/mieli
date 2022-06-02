@@ -33,10 +33,6 @@ pub fn write_json(response: Value) -> Result<Value> {
 }
 
 pub fn write_response_full(response: Response, verbose: usize) -> Result<Value> {
-    println!("before headers");
     write_response_headers(&response, verbose)?;
-    println!("wrote headers");
-    let json = response.json()?;
-    println!("got the json");
-    write_json(json)
+    write_json(response.json()?)
 }
