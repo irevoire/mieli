@@ -214,7 +214,7 @@ impl Meilisearch {
             let mut buffer = Vec::new();
             stdin().read_to_end(&mut buffer);
 
-            self.post(format!("{}/indexes/{}/settings", self.addr, self.index))
+            self.patch(format!("{}/indexes/{}/settings", self.addr, self.index))
                 .header("Content-Type", "application/json")
                 .body(buffer)
                 .send()?
@@ -256,7 +256,7 @@ impl Meilisearch {
             body["primaryKey"] = json!(primary_key);
         }
         let response = self
-            .put(format!("{}/indexes/{}", self.addr, index))
+            .patch(format!("{}/indexes/{}", self.addr, index))
             .json(&body)
             .send()?;
         self.handle_response(response)
@@ -404,7 +404,10 @@ impl Meilisearch {
 
         let buffer = String::new();
 
-        if let Some(uid) = response["uid"].as_i64() {
+        if let Some(uid) = response["uid"]
+            .as_i64()
+            .or_else(|| response["taskUid"].as_i64())
+        {
             loop {
                 let response = self.get(format!("{}/tasks/{}", self.addr, uid)).send()?;
                 let json = response.json::<Value>()?;
