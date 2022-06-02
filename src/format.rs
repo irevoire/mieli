@@ -27,7 +27,7 @@ pub fn write_json(response: Value) -> Result<Value> {
     if atty::is(atty::Stream::Stdout) {
         println!("{}", colored_json::to_colored_json_auto(&response)?);
     } else {
-        println!("{}", serde_json::to_string(&response)?);
+        println!("{}", serde_json::to_string_pretty(&response)?);
     }
     Ok(response)
 }
