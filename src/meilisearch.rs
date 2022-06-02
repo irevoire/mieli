@@ -12,7 +12,7 @@ use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
-    header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT},
+    header::{CONTENT_TYPE, USER_AGENT},
     StatusCode,
 };
 use serde_json::{json, Map, Value};
@@ -25,6 +25,7 @@ pub struct Meilisearch {
     pub interval: usize,
     pub r#async: bool,
     pub user_agent: String,
+    pub custom_header: Option<String>,
     pub verbose: usize,
 }
 
@@ -40,6 +41,7 @@ impl From<&Options> for Meilisearch {
                 .user_agent
                 .clone()
                 .unwrap_or_else(|| format!("mieli/{}", env!("CARGO_PKG_VERSION"))),
+            custom_header: options.custom_header.clone(),
             verbose: options.verbose,
         }
     }
@@ -78,15 +80,14 @@ impl Meilisearch {
         &self,
         closure: impl Fn(Client) -> RequestBuilder,
     ) -> reqwest::blocking::RequestBuilder {
-        let req_builder = closure(Client::new());
+        let mut req_builder = closure(Client::new());
         if let Some(ref key) = self.key {
-            req_builder
-                .header("X-Meili-API-Key", key)
-                .header(AUTHORIZATION, &format!("Bearer {}", key))
-                .header(USER_AGENT, &self.user_agent)
-        } else {
-            req_builder.header(USER_AGENT, &self.user_agent)
+            req_builder = req_builder.header("X-Meili-API-Key", key).bearer_auth(key);
         }
+        if let Some((key, value)) = self.custom_header.as_ref().and_then(|h| h.split_once(':')) {
+            req_builder = req_builder.header(key, value);
+        }
+        req_builder.header(USER_AGENT, &self.user_agent)
     }
 
     pub fn get_one_document(&self, docid: DocId) -> Result<()> {
