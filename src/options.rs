@@ -39,6 +39,11 @@ pub struct Options {
     #[structopt(global = true, long)]
     pub user_agent: Option<String>,
 
+    /// Use a specific http header for your request.
+    /// Eg. `mieli search --custom-header "x-meilisearch-client: turbo-doggo/42.9000"`
+    #[structopt(global = true, long)]
+    pub custom_header: Option<String>,
+
     /// Interval between each status check (in milliseconds)
     #[structopt(global = true, long, default_value = "200")]
     pub interval: usize,
