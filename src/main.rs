@@ -12,7 +12,7 @@ use options::{Command, KeyCommand, Options};
 
 use structopt::StructOpt;
 
-use crate::{meilisearch::Meilisearch, options::IndexesCommand};
+use crate::options::IndexesCommand;
 
 type DocId = u32;
 type UpdateId = u32;
@@ -21,7 +21,7 @@ type DumpId = String;
 
 fn main() -> Result<()> {
     let opt = Options::from_args();
-    let meili = Meilisearch::from(&opt);
+    let meili = opt.meilisearch;
 
     match opt.command {
         Command::Get { document_id: None } => meili.get_all_documents()?,
@@ -32,33 +32,21 @@ fn main() -> Result<()> {
             content_type,
             file,
             primary,
-            r#async,
         } => {
-            meili
-                .r#async(r#async)
-                .index_documents(file, primary, content_type, false)?;
+            meili.index_documents(file, primary, content_type, false)?;
         }
         Command::Update {
             content_type,
             file,
             primary,
-            r#async,
         } => {
-            meili
-                .r#async(r#async)
-                .index_documents(file, primary, content_type, true)?;
+            meili.index_documents(file, primary, content_type, true)?;
         }
-        Command::Delete {
-            document_ids,
-            r#async,
-        } => {
-            let meili = meili.r#async(r#async);
-            match document_ids.as_slice() {
-                [] => meili.delete_all()?,
-                [id] => meili.delete_one(*id)?,
-                ids => meili.delete_batch(ids)?,
-            }
-        }
+        Command::Delete { document_ids } => match document_ids.as_slice() {
+            [] => meili.delete_all()?,
+            [id] => meili.delete_one(*id)?,
+            ids => meili.delete_batch(ids)?,
+        },
         Command::Search {
             search_terms,
             interactive: false,
@@ -67,46 +55,27 @@ fn main() -> Result<()> {
             search_terms,
             interactive: true,
         } => meili.interactive_search(search_terms.join(" "))?,
-        Command::Settings { r#async } => meili.r#async(r#async).settings()?,
+        Command::Settings => meili.settings()?,
         Command::Index { command } => match command {
             IndexesCommand::List => meili.get_all_indexes()?,
             IndexesCommand::Get { index } => meili.get_index(index)?,
-            IndexesCommand::Create {
-                index,
-                primary,
-                r#async,
-            } => meili.r#async(r#async).create_index(index, primary)?,
-            IndexesCommand::Update {
-                index,
-                primary,
-                r#async,
-            } => meili.r#async(r#async).update_index(index, primary)?,
-            IndexesCommand::Delete { index, r#async } => {
-                meili.r#async(r#async).delete_index(index)?
-            }
+            IndexesCommand::Create { index, primary } => meili.create_index(index, primary)?,
+            IndexesCommand::Update { index, primary } => meili.update_index(index, primary)?,
+            IndexesCommand::Delete { index } => meili.delete_index(index)?,
         },
+        Command::Dump { dump_id: None } => meili.create_dump()?,
         Command::Dump {
-            r#async,
-            dump_id: None,
-        } => meili.r#async(r#async).create_dump()?,
-        Command::Dump {
-            r#async,
             dump_id: Some(dump_id),
         } => meili.dump_status(dump_id)?,
         Command::Health => meili.healthcheck()?,
         Command::Version => meili.version()?,
         Command::Stats => meili.stats()?,
-        Command::Status { update_id, watch } => meili.r#async(!watch).status(update_id)?,
+        Command::Status { update_id } => meili.status(update_id)?,
+        Command::Task { task_id, all: true } => meili.global_task(task_id)?,
         Command::Task {
             task_id,
-            watch,
-            all: true,
-        } => meili.r#async(!watch).global_task(task_id)?,
-        Command::Task {
-            task_id,
-            watch,
             all: false,
-        } => meili.r#async(!watch).task_by_index(task_id)?,
+        } => meili.task_by_index(task_id)?,
         Command::Key { command } => match command {
             KeyCommand::List => meili.get_keys()?,
             KeyCommand::Get { k } => meili.get_key(k)?,
