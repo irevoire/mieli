@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
-    DocId, DumpId, Options, TaskId, UpdateId,
+    DocId, DumpId, TaskId, UpdateId,
 };
 use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
@@ -16,46 +16,61 @@ use reqwest::{
     StatusCode,
 };
 use serde_json::{json, Map, Value};
+use structopt::StructOpt;
 
-#[derive(Debug, Default)]
+#[derive(Debug, StructOpt)]
 pub struct Meilisearch {
-    pub addr: String,
-    pub index: String,
-    pub key: Option<String>,
-    pub interval: usize,
-    pub r#async: bool,
-    pub user_agent: String,
-    pub custom_header: Option<String>,
+    /// Verbose mode (-v, -vv, etc)
+    #[structopt(global = true, short, parse(from_occurrences))]
     pub verbose: usize,
-}
 
-impl From<&Options> for Meilisearch {
-    fn from(options: &Options) -> Self {
-        Self {
-            addr: options.addr.clone(),
-            index: options.index.clone(),
-            key: options.key.clone(),
-            interval: options.interval,
-            r#async: true,
-            user_agent: options
-                .user_agent
-                .clone()
-                .unwrap_or_else(|| format!("mieli/{}", env!("CARGO_PKG_VERSION"))),
-            custom_header: options.custom_header.clone(),
-            verbose: options.verbose,
-        }
-    }
+    /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
+    #[structopt(
+        global = true,
+        short,
+        long,
+        default_value = "http://localhost:7700",
+        env = "MEILI_ADDR"
+    )]
+    pub addr: String,
+
+    /// The command will exit immediatly after executing.
+    #[structopt(global = true, long)]
+    pub r#async: bool,
+
+    /// The name of the index
+    #[structopt(
+        global = true,
+        short,
+        long,
+        default_value = "mieli",
+        env = "MIELI_INDEX"
+    )]
+    pub index: String,
+
+    /// Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
+    #[structopt(global = true, short, long, env = "MEILI_MASTER_KEY")]
+    pub key: Option<String>,
+
+    /// Use a specific http User-Agent for your request
+    #[structopt(
+        global = true,
+        long,
+        default_value = concat!("mieli/", env!("CARGO_PKG_VERSION")),
+    )]
+    pub user_agent: String,
+
+    /// Use a specific http header for your request.
+    /// Eg. `mieli search --custom-header "x-meilisearch-client: turbo-doggo/42.9000"`
+    #[structopt(global = true, long)]
+    pub custom_header: Option<String>,
+
+    /// Interval between each status check (in milliseconds)
+    #[structopt(global = true, long, default_value = "200")]
+    pub interval: usize,
 }
 
 impl Meilisearch {
-    pub fn r#async(self, r#async: bool) -> Self {
-        // we stay in async mode if the command is being piped
-        Self {
-            r#async: r#async || atty::isnt(atty::Stream::Stdout),
-            ..self
-        }
-    }
-
     pub fn get(&self, url: impl AsRef<str>) -> RequestBuilder {
         self.request(|c| c.get(url.as_ref()))
     }

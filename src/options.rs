@@ -2,51 +2,13 @@ use std::path::PathBuf;
 
 use structopt::*;
 
-use crate::{DocId, TaskId, UpdateId};
+use crate::{meilisearch::Meilisearch, DocId, TaskId, UpdateId};
 
 #[derive(Debug, StructOpt)]
 #[structopt(about = "A stupid wrapper around meilisearch")]
 pub struct Options {
-    /// Verbose mode (-v, -vv, etc)
-    #[structopt(global = true, short, parse(from_occurrences))]
-    pub verbose: usize,
-
-    /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
-    #[structopt(
-        global = true,
-        short,
-        long,
-        default_value = "http://localhost:7700",
-        env = "MEILI_ADDR"
-    )]
-    pub addr: String,
-
-    /// The name of the index
-    #[structopt(
-        global = true,
-        short,
-        long,
-        default_value = "mieli",
-        env = "MIELI_INDEX"
-    )]
-    pub index: String,
-
-    /// Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
-    #[structopt(global = true, short, long, env = "MEILI_MASTER_KEY")]
-    pub key: Option<String>,
-
-    /// Use a specific http User-Agent for your request
-    #[structopt(global = true, long)]
-    pub user_agent: Option<String>,
-
-    /// Use a specific http header for your request.
-    /// Eg. `mieli search --custom-header "x-meilisearch-client: turbo-doggo/42.9000"`
-    #[structopt(global = true, long)]
-    pub custom_header: Option<String>,
-
-    /// Interval between each status check (in milliseconds)
-    #[structopt(global = true, long, default_value = "200")]
-    pub interval: usize,
+    #[structopt(flatten)]
+    pub meilisearch: Meilisearch,
 
     #[structopt(subcommand)]
     pub command: Command,
@@ -65,9 +27,6 @@ pub enum Command {
         /// Set the content-type of your file
         #[structopt(short, default_value = "application/json")]
         content_type: String,
-        /// The command will exit immediatly after sending the documents
-        #[structopt(long)]
-        r#async: bool,
         /// The primary key
         #[structopt(short, long)]
         primary: Option<String>,
@@ -80,9 +39,6 @@ pub enum Command {
         /// Set the content-type of your file
         #[structopt(short, default_value = "application/json")]
         content_type: String,
-        /// The command will exit immediatly after sending the documents
-        #[structopt(long)]
-        r#async: bool,
         /// The primary key
         #[structopt(short, long)]
         primary: Option<String>,
@@ -93,15 +49,9 @@ pub enum Command {
     Delete {
         /// The list of document ids you want to delete
         document_ids: Vec<DocId>,
-        /// The command will exit immediatly after sending the documents ids
-        #[structopt(long)]
-        r#async: bool,
     },
     /// Create a dump or get the status of a dump
     Dump {
-        /// The command will exit immediatly after asking for a dump
-        #[structopt(long)]
-        r#async: bool,
         /// The dump you want info from
         dump_id: Option<String>,
     },
@@ -109,18 +59,12 @@ pub enum Command {
     Status {
         /// The update id you want the status of
         update_id: Option<UpdateId>,
-        /// If the flag is set, the command will wait until the update finishes
-        #[structopt(short, long)]
-        watch: bool,
     },
     /// Get information about the task of an index.
     #[structopt(aliases = &["tasks"])]
     Task {
         /// The task you want to inspect.
         task_id: Option<TaskId>,
-        /// If the flag is set, the command will wait until the update finishes
-        #[structopt(short, long)]
-        watch: bool,
 
         /// If the flag is set, the command will look in all the tasks instead of the tasks by indexes.
         #[structopt(long)]
@@ -148,11 +92,7 @@ pub enum Command {
     /// Get or update the settings.
     /// You can pipe your settings in the command.
     #[structopt(aliases = &["set", "setting"])]
-    Settings {
-        /// The command will exit immediatly after sending the new settings
-        #[structopt(long)]
-        r#async: bool,
-    },
+    Settings,
     /// Manipulate indexes, add `--help` to see all the subcommands.
     #[structopt(aliases = &["indexes"])]
     Index {
@@ -186,9 +126,6 @@ pub enum IndexesCommand {
         /// Primary key
         #[structopt(short, long)]
         primary: Option<String>,
-        /// The command will exit immediatly after asking for a dump
-        #[structopt(long)]
-        r#async: bool,
     },
     /// Update an index, by default use the index provided by `-i`.
     Update {
@@ -198,18 +135,12 @@ pub enum IndexesCommand {
         /// Primary key
         #[structopt(short, long)]
         primary: Option<String>,
-        /// The command will exit immediatly after asking for a dump
-        #[structopt(long)]
-        r#async: bool,
     },
     /// Delete an index, by default use the index provided by `-i`.
     Delete {
         /// The index you want to delete.
         #[structopt(name = "idx")]
         index: Option<String>,
-        /// The command will exit immediatly after asking for a dump
-        #[structopt(long)]
-        r#async: bool,
     },
 }
 
