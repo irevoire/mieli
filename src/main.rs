@@ -71,11 +71,7 @@ fn main() -> Result<()> {
         Command::Version => meili.version()?,
         Command::Stats => meili.stats()?,
         Command::Status { update_id } => meili.status(update_id)?,
-        Command::Task { task_id, all: true } => meili.global_task(task_id)?,
-        Command::Task {
-            task_id,
-            all: false,
-        } => meili.task_by_index(task_id)?,
+        Command::Tasks { task_id } => meili.tasks(task_id)?,
         Command::Key { command } => match command {
             KeyCommand::List => meili.get_keys()?,
             KeyCommand::Get { k } => meili.get_key(k)?,

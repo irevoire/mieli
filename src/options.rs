@@ -61,14 +61,10 @@ pub enum Command {
         update_id: Option<UpdateId>,
     },
     /// Get information about the task of an index.
-    #[structopt(aliases = &["tasks"])]
-    Task {
+    #[structopt(aliases = &["task"])]
+    Tasks {
         /// The task you want to inspect.
         task_id: Option<TaskId>,
-
-        /// If the flag is set, the command will look in all the tasks instead of the tasks by indexes.
-        #[structopt(long)]
-        all: bool,
     },
     /// Do an healthcheck
     Health,
