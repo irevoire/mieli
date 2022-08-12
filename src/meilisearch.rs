@@ -127,7 +127,7 @@ impl Meilisearch {
         &self,
         filepath: Option<PathBuf>,
         primary_key: Option<String>,
-        content_type: String,
+        content_type: Option<String>,
         reindex: bool,
     ) -> Result<()> {
         let url = format!("{}/indexes/{}/documents", self.addr, self.index);
@@ -135,7 +135,21 @@ impl Meilisearch {
             false => self.post(url),
             true => self.put(url),
         };
-        let client = client.header(CONTENT_TYPE, content_type);
+        let client = if let Some(content_type) = content_type {
+            client.header(CONTENT_TYPE, content_type)
+        } else {
+            match filepath
+                .as_ref()
+                .and_then(|filepath| filepath.extension())
+                .and_then(|ext| ext.to_str())
+            {
+                Some("csv") => client.header(CONTENT_TYPE, "text/csv"),
+                Some("jsonl") | Some("ndjson") | Some("jsonlines") => {
+                    client.header(CONTENT_TYPE, "text/x-ndjson")
+                }
+                _ => client.header(CONTENT_TYPE, "application/json"),
+            }
+        };
         let client = if let Some(primary_key) = primary_key {
             client.query(&[("primaryKey", primary_key)])
         } else {

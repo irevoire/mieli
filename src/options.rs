@@ -23,10 +23,12 @@ pub enum Command {
     },
     /// Add documents with the `post` verb
     /// You can pipe your documents in the command
+    /// Will try to infer the content-type from the file extension if it fail
+    /// it'll be set as json.
     Add {
-        /// Set the content-type of your file
-        #[structopt(short, default_value = "application/json")]
-        content_type: String,
+        /// Set the content-type of your file.
+        #[structopt(short)]
+        content_type: Option<String>,
         /// The primary key
         #[structopt(short, long)]
         primary: Option<String>,
@@ -35,10 +37,12 @@ pub enum Command {
     },
     /// Replace documents with the `put` verb
     /// You can pipe your documents in the command
+    /// Will try to infer the content-type from the file extension if it fail
+    /// it'll be set as json.
     Update {
         /// Set the content-type of your file
-        #[structopt(short, default_value = "application/json")]
-        content_type: String,
+        #[structopt(short)]
+        content_type: Option<String>,
         /// The primary key
         #[structopt(short, long)]
         primary: Option<String>,
