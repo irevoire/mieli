@@ -78,6 +78,7 @@ pub enum Command {
 #[derive(Debug, StructOpt)]
 pub enum DocumentsCommand {
     /// Get one document. If no argument are specified it returns all documents.
+    #[structopt(aliases = &["g"])]
     Get {
         /// The id of the document you want to retrieve
         document_id: Option<DocId>,
@@ -86,6 +87,7 @@ pub enum DocumentsCommand {
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
+    #[structopt(aliases = &["a"])]
     Add {
         /// Set the content-type of your file.
         #[structopt(short)]
@@ -100,6 +102,7 @@ pub enum DocumentsCommand {
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
+    #[structopt(aliases = &["u"])]
     Update {
         /// Set the content-type of your file
         #[structopt(short)]
@@ -111,6 +114,7 @@ pub enum DocumentsCommand {
         file: Option<PathBuf>,
     },
     /// Delete documents. If no argument are specified all documents are deleted.
+    #[structopt(aliases = &["d"])]
     Delete {
         /// The list of document ids you want to delete
         document_ids: Vec<DocId>,
