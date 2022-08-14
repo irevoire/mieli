@@ -1,26 +1,26 @@
 use std::path::PathBuf;
 
+use clap::Parser;
 use serde::Serialize;
-use structopt::*;
 
 use crate::{meilisearch::Meilisearch, DocId, TaskId, UpdateId};
 
-#[derive(Debug, StructOpt)]
-#[structopt(about = "A stupid wrapper around meilisearch")]
+#[derive(Debug, Parser)]
+#[clap(about = "A stupid wrapper around meilisearch")]
 pub struct Options {
-    #[structopt(flatten)]
+    #[clap(flatten)]
     pub meilisearch: Meilisearch,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: Command,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Command {
     /// Manipulate documents, add `--help` to see all the subcommands.
-    #[structopt(aliases = &["document", "doc", "docs", "d"])]
+    #[clap(aliases = &["document", "doc", "docs", "d"])]
     Documents {
-        #[structopt(subcommand)]
+        #[clap(subcommand)]
         command: DocumentsCommand,
     },
     /// Create a dump or get the status of a dump
@@ -34,21 +34,21 @@ pub enum Command {
         update_id: Option<UpdateId>,
     },
     /// Get information about the task of an index.
-    #[structopt(aliases = &["task", "t"])]
+    #[clap(aliases = &["task", "t"])]
     Tasks {
         /// The task you want to inspect.
         task_id: Option<TaskId>,
         /// The task filters you want to apply.
-        #[structopt(flatten)]
+        #[clap(flatten)]
         task_filter: TasksFilter,
     },
     /// Do an healthcheck
     Health,
     /// Return the version of the running meilisearch instance
-    #[structopt(aliases = &["ver", "v"])]
+    #[clap(aliases = &["ver", "v"])]
     Version,
     /// Return the stats about the indexes
-    #[structopt(aliases = &["stat"])]
+    #[clap(aliases = &["stat"])]
     Stats,
     /// Do a search. You can pipe your parameter in the command as a json.
     /// Or you can specify directly what you want to search in the arguments.
@@ -58,65 +58,81 @@ pub enum Command {
         search_terms: Vec<String>,
 
         /// If you want to use the interactive search. It's a beta feature
-        #[structopt(long)]
+        #[clap(long)]
         interactive: bool,
     },
     /// Get or update the settings.
     /// You can pipe your settings in the command.
-    #[structopt(aliases = &["set", "setting"])]
+    #[clap(aliases = &["set", "setting"])]
     Settings,
     /// Manipulate indexes, add `--help` to see all the subcommands.
-    #[structopt(aliases = &["indexes", "i"])]
+    #[clap(aliases = &["indexes", "i"])]
     Index {
-        #[structopt(subcommand)]
+        #[clap(subcommand)]
         command: IndexesCommand,
     },
     /// Get the keys
-    #[structopt(aliases = &["keys", "k"])]
+    #[clap(aliases = &["keys", "k"])]
     Key {
-        #[structopt(subcommand)]
+        #[clap(subcommand)]
         command: KeyCommand,
     },
 }
 
-#[derive(Debug, StructOpt, Serialize)]
+#[derive(Debug, Parser, Serialize)]
 pub struct TasksFilter {
     /// Number of tasks to return.
-    #[structopt(long)]
+    #[clap(long)]
     limit: Option<usize>,
     /// Task id of the first task returned.
-    #[structopt(long)]
+    #[clap(long)]
     from: Option<usize>,
     /// Filter tasks by their status.
-    #[structopt(long)]
+    #[clap(long)]
     status: Option<String>,
     /// Filter tasks by their type.
-    #[structopt(long, aliases = &["ty"])]
+    #[clap(long, aliases = &["ty"])]
     r#type: Option<String>,
     /// Filter tasks by their index uid.
-    #[structopt(long, name = "uid")]
+    #[clap(long, name = "uid")]
     uid: Option<String>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser, Serialize)]
+pub struct GetDocumentParameter {
+    /// Number of documents to return.
+    #[clap(long, aliases = &["limits"])]
+    limit: Option<usize>,
+    /// Skip the n first documents.
+    #[clap(long)]
+    from: Option<usize>,
+    /// Select fields from the documents.
+    #[clap(long, aliases = &["field"])]
+    fields: Option<String>,
+}
+
+#[derive(Debug, Parser)]
 pub enum DocumentsCommand {
     /// Get one document. If no argument are specified it returns all documents.
-    #[structopt(aliases = &["g"])]
+    #[clap(aliases = &["g"])]
     Get {
         /// The id of the document you want to retrieve
         document_id: Option<DocId>,
+        /// Query parameters.
+        #[clap(flatten)]
+        param: GetDocumentParameter,
     },
     /// Add documents with the `post` verb
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
-    #[structopt(aliases = &["a"])]
+    #[clap(aliases = &["a"])]
     Add {
         /// Set the content-type of your file.
-        #[structopt(short)]
+        #[clap(short)]
         content_type: Option<String>,
         /// The primary key
-        #[structopt(short, long)]
+        #[clap(short, long)]
         primary: Option<String>,
         /// The file you want to send
         file: Option<PathBuf>,
@@ -125,66 +141,66 @@ pub enum DocumentsCommand {
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
-    #[structopt(aliases = &["u"])]
+    #[clap(aliases = &["u"])]
     Update {
         /// Set the content-type of your file
-        #[structopt(short)]
+        #[clap(short)]
         content_type: Option<String>,
         /// The primary key
-        #[structopt(short, long)]
+        #[clap(short, long)]
         primary: Option<String>,
         /// The file you want to send
         file: Option<PathBuf>,
     },
     /// Delete documents. If no argument are specified all documents are deleted.
-    #[structopt(aliases = &["d"])]
+    #[clap(aliases = &["d"])]
     Delete {
         /// The list of document ids you want to delete
         document_ids: Vec<DocId>,
     },
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum IndexesCommand {
     /// List all indexes.
-    #[structopt(aliases = &["all"])]
+    #[clap(aliases = &["all"])]
     List,
     /// Get an index, by default use the index provided by `-i`.
     Get {
         /// The index you want to retrieve.
-        #[structopt(name = "idx")]
+        #[clap(name = "idx")]
         index: Option<String>,
     },
     /// Create an index, by default use the index provided by `-i`.
     Create {
         /// The index you want to create.
-        #[structopt(name = "idx")]
+        #[clap(name = "idx")]
         index: Option<String>,
         /// Primary key
-        #[structopt(short, long)]
+        #[clap(short, long)]
         primary: Option<String>,
     },
     /// Update an index, by default use the index provided by `-i`.
     Update {
         /// The index you want to update.
-        #[structopt(name = "idx")]
+        #[clap(name = "idx")]
         index: Option<String>,
         /// Primary key
-        #[structopt(short, long)]
+        #[clap(short, long)]
         primary: Option<String>,
     },
     /// Delete an index, by default use the index provided by `-i`.
     Delete {
         /// The index you want to delete.
-        #[structopt(name = "idx")]
+        #[clap(name = "idx")]
         index: Option<String>,
     },
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum KeyCommand {
     /// List all keys.
-    #[structopt(aliases = &["all"])]
+    #[clap(aliases = &["all"])]
     List,
     /// Get a key, by default use the key provided by `-k`.
     Get {
@@ -192,10 +208,10 @@ pub enum KeyCommand {
         k: Option<String>,
     },
     /// Create a key. The json needs to be piped in the command.
-    #[structopt(aliases = &["post"])]
+    #[clap(aliases = &["post"])]
     Create,
     /// Update a key. The json needs to be piped in the command.
-    #[structopt(aliases = &["patch"])]
+    #[clap(aliases = &["patch"])]
     Update {
         /// The key you want to update. If you don't provide
         /// it here you need to send it in the json.

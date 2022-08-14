@@ -9,10 +9,10 @@ mod options;
 
 use options::{Command, DocumentsCommand, IndexesCommand, KeyCommand, Options};
 
+use clap::Parser;
 use miette::Result;
-use structopt::StructOpt;
 
-type DocId = u32;
+type DocId = String;
 type UpdateId = u32;
 type TaskId = u32;
 type DumpId = String;
@@ -23,9 +23,13 @@ fn main() -> Result<()> {
 
     match opt.command {
         Command::Documents { command } => match command {
-            DocumentsCommand::Get { document_id: None } => meili.get_all_documents(),
+            DocumentsCommand::Get {
+                document_id: None,
+                param,
+            } => meili.get_all_documents(param),
             DocumentsCommand::Get {
                 document_id: Some(id),
+                ..
             } => meili.get_one_document(id),
             DocumentsCommand::Add {
                 content_type,
@@ -39,7 +43,7 @@ fn main() -> Result<()> {
             } => meili.index_documents(file, primary, content_type, true),
             DocumentsCommand::Delete { document_ids } => match document_ids.as_slice() {
                 [] => meili.delete_all(),
-                [id] => meili.delete_one(*id),
+                [id] => meili.delete_one(id.clone()),
                 ids => meili.delete_batch(ids),
             },
         },

@@ -6,9 +6,10 @@ use std::{
 
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
-    options::TasksFilter,
+    options::{GetDocumentParameter, TasksFilter},
     DocId, DumpId, TaskId, UpdateId,
 };
+use clap::Parser;
 use indicatif::ProgressBar;
 use miette::{bail, miette, IntoDiagnostic, Result};
 use reqwest::{
@@ -17,9 +18,8 @@ use reqwest::{
     StatusCode,
 };
 use serde_json::{json, Map, Value};
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Meilisearch {
     /// Verbose mode (-v, -vv, etc)
     #[structopt(global = true, short, parse(from_occurrences))]
@@ -117,10 +117,14 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn get_all_documents(&self) -> Result<()> {
-        // TODO: we should cycle to get ALL the documents
+    pub fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
         let response = self
-            .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
+            .get(&format!(
+                "{}/indexes/{}/documents?{}",
+                self.addr,
+                self.index,
+                yaup::to_string(&params).into_diagnostic()?
+            ))
             .send()
             .into_diagnostic()?;
         self.handle_response(response)
