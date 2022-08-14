@@ -16,6 +16,67 @@ pub struct Options {
 
 #[derive(Debug, StructOpt)]
 pub enum Command {
+    /// Manipulate documents, add `--help` to see all the subcommands.
+    #[structopt(aliases = &["document", "doc", "docs", "d"])]
+    Documents {
+        #[structopt(subcommand)]
+        command: DocumentsCommand,
+    },
+    /// Create a dump or get the status of a dump
+    Dump {
+        /// The dump you want info from
+        dump_id: Option<String>,
+    },
+    /// Return the status updates
+    Status {
+        /// The update id you want the status of
+        update_id: Option<UpdateId>,
+    },
+    /// Get information about the task of an index.
+    #[structopt(aliases = &["task", "t"])]
+    Tasks {
+        /// The task you want to inspect.
+        task_id: Option<TaskId>,
+    },
+    /// Do an healthcheck
+    Health,
+    /// Return the version of the running meilisearch instance
+    #[structopt(aliases = &["ver", "v"])]
+    Version,
+    /// Return the stats about the indexes
+    #[structopt(aliases = &["stat"])]
+    Stats,
+    /// Do a search. You can pipe your parameter in the command as a json.
+    /// Or you can specify directly what you want to search in the arguments.
+    Search {
+        /// What you want to search. If nothing was piped in the command a simple request with only `q` will be ran.
+        /// If you piped some configuration the `q` parameter will be replaced with the one specified in the arguments.
+        search_terms: Vec<String>,
+
+        /// If you want to use the interactive search. It's a beta feature
+        #[structopt(long)]
+        interactive: bool,
+    },
+    /// Get or update the settings.
+    /// You can pipe your settings in the command.
+    #[structopt(aliases = &["set", "setting"])]
+    Settings,
+    /// Manipulate indexes, add `--help` to see all the subcommands.
+    #[structopt(aliases = &["indexes", "i"])]
+    Index {
+        #[structopt(subcommand)]
+        command: IndexesCommand,
+    },
+    /// Get the keys
+    #[structopt(aliases = &["keys", "k"])]
+    Key {
+        #[structopt(subcommand)]
+        command: KeyCommand,
+    },
+}
+
+#[derive(Debug, StructOpt)]
+pub enum DocumentsCommand {
     /// Get one document. If no argument are specified it returns all documents.
     Get {
         /// The id of the document you want to retrieve
@@ -53,57 +114,6 @@ pub enum Command {
     Delete {
         /// The list of document ids you want to delete
         document_ids: Vec<DocId>,
-    },
-    /// Create a dump or get the status of a dump
-    Dump {
-        /// The dump you want info from
-        dump_id: Option<String>,
-    },
-    /// Return the status updates
-    Status {
-        /// The update id you want the status of
-        update_id: Option<UpdateId>,
-    },
-    /// Get information about the task of an index.
-    #[structopt(aliases = &["task"])]
-    Tasks {
-        /// The task you want to inspect.
-        task_id: Option<TaskId>,
-    },
-    /// Do an healthcheck
-    Health,
-    /// Return the version of the running meilisearch instance
-    #[structopt(aliases = &["ver"])]
-    Version,
-    /// Return the stats about the indexes
-    #[structopt(aliases = &["stat"])]
-    Stats,
-    /// Do a search. You can pipe your parameter in the command as a json.
-    /// Or you can specify directly what you want to search in the arguments.
-    Search {
-        /// What you want to search. If nothing was piped in the command a simple request with only `q` will be ran.
-        /// If you piped some configuration the `q` parameter will be replaced with the one specified in the arguments.
-        search_terms: Vec<String>,
-
-        /// If you want to use the interactive search. It's a beta feature
-        #[structopt(long)]
-        interactive: bool,
-    },
-    /// Get or update the settings.
-    /// You can pipe your settings in the command.
-    #[structopt(aliases = &["set", "setting"])]
-    Settings,
-    /// Manipulate indexes, add `--help` to see all the subcommands.
-    #[structopt(aliases = &["indexes"])]
-    Index {
-        #[structopt(subcommand)]
-        command: IndexesCommand,
-    },
-    /// Get the keys
-    #[structopt(aliases = &["keys"])]
-    Key {
-        #[structopt(subcommand)]
-        command: KeyCommand,
     },
 }
 

@@ -8,7 +8,7 @@ mod meilisearch;
 mod options;
 
 use anyhow::Result;
-use options::{Command, KeyCommand, Options};
+use options::{Command, DocumentsCommand, KeyCommand, Options};
 
 use structopt::StructOpt;
 
@@ -24,28 +24,30 @@ fn main() -> Result<()> {
     let meili = opt.meilisearch;
 
     match opt.command {
-        Command::Get { document_id: None } => meili.get_all_documents()?,
-        Command::Get {
-            document_id: Some(id),
-        } => meili.get_one_document(id)?,
-        Command::Add {
-            content_type,
-            file,
-            primary,
-        } => {
-            meili.index_documents(file, primary, content_type, false)?;
-        }
-        Command::Update {
-            content_type,
-            file,
-            primary,
-        } => {
-            meili.index_documents(file, primary, content_type, true)?;
-        }
-        Command::Delete { document_ids } => match document_ids.as_slice() {
-            [] => meili.delete_all()?,
-            [id] => meili.delete_one(*id)?,
-            ids => meili.delete_batch(ids)?,
+        Command::Documents { command } => match command {
+            DocumentsCommand::Get { document_id: None } => meili.get_all_documents()?,
+            DocumentsCommand::Get {
+                document_id: Some(id),
+            } => meili.get_one_document(id)?,
+            DocumentsCommand::Add {
+                content_type,
+                file,
+                primary,
+            } => {
+                meili.index_documents(file, primary, content_type, false)?;
+            }
+            DocumentsCommand::Update {
+                content_type,
+                file,
+                primary,
+            } => {
+                meili.index_documents(file, primary, content_type, true)?;
+            }
+            DocumentsCommand::Delete { document_ids } => match document_ids.as_slice() {
+                [] => meili.delete_all()?,
+                [id] => meili.delete_one(*id)?,
+                ids => meili.delete_batch(ids)?,
+            },
         },
         Command::Search {
             search_terms,
