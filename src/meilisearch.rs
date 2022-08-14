@@ -163,13 +163,13 @@ impl Meilisearch {
                 let file = File::open(filepath).into_diagnostic()?;
                 client.body(file).send().into_diagnostic()?
             }
-            None => {
-                // TODO: is this the only way to do it?
+            None if atty::isnt(atty::Stream::Stdin) => {
                 let mut buffer = Vec::new();
                 stdin().read_to_end(&mut buffer);
 
                 client.body(buffer).send().into_diagnostic()?
             }
+            None => bail!("Did you forgot to pipe something in the command?"),
         };
         self.handle_response(response)
     }
@@ -216,7 +216,7 @@ impl Meilisearch {
         }
         let response = self
             .post(format!("{}/indexes/{}/search", self.addr, self.index))
-            .header("Content-Type", "application/json")
+            .header(CONTENT_TYPE, "application/json")
             .json(&value)
             .send()
             .into_diagnostic()?;
@@ -253,7 +253,7 @@ impl Meilisearch {
             let url = format!("{}/indexes/{}/settings", self.addr, self.index);
             let mut response = self
                 .patch(&url)
-                .header("Content-Type", "application/json")
+                .header(CONTENT_TYPE, "application/json")
                 .body(buffer.clone())
                 .send()
                 .into_diagnostic()?;
@@ -261,7 +261,7 @@ impl Meilisearch {
             if response.status().as_u16() == 405 {
                 response = self
                     .post(url)
-                    .header("Content-Type", "application/json")
+                    .header(CONTENT_TYPE, "application/json")
                     .body(buffer)
                     .send()
                     .into_diagnostic()?;
