@@ -14,7 +14,6 @@ keywords = ["meilisearch", "cli", "search", "bears"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.43"
 atty = "0.2"
 structopt = "0.3.22"
 reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "blocking", "json"] }
