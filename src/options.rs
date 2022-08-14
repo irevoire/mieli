@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use serde::Serialize;
 use structopt::*;
 
 use crate::{meilisearch::Meilisearch, DocId, TaskId, UpdateId};
@@ -37,6 +38,9 @@ pub enum Command {
     Tasks {
         /// The task you want to inspect.
         task_id: Option<TaskId>,
+        /// The task filters you want to apply.
+        #[structopt(flatten)]
+        task_filter: TasksFilter,
     },
     /// Do an healthcheck
     Health,
@@ -73,6 +77,25 @@ pub enum Command {
         #[structopt(subcommand)]
         command: KeyCommand,
     },
+}
+
+#[derive(Debug, StructOpt, Serialize)]
+pub struct TasksFilter {
+    /// Number of tasks to return.
+    #[structopt(long)]
+    limit: Option<usize>,
+    /// Task id of the first task returned.
+    #[structopt(long)]
+    from: Option<usize>,
+    /// Filter tasks by their status.
+    #[structopt(long)]
+    status: Option<String>,
+    /// Filter tasks by their type.
+    #[structopt(long, aliases = &["ty"])]
+    r#type: Option<String>,
+    /// Filter tasks by their index uid.
+    #[structopt(long, name = "uid")]
+    uid: Option<String>,
 }
 
 #[derive(Debug, StructOpt)]

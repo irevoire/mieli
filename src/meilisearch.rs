@@ -6,6 +6,7 @@ use std::{
 
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
+    options::TasksFilter,
     DocId, DumpId, TaskId, UpdateId,
 };
 use indicatif::ProgressBar;
@@ -339,12 +340,13 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn tasks(&self, tid: Option<TaskId>) -> Result<()> {
+    pub fn tasks(&self, tid: Option<TaskId>, task_filter: TasksFilter) -> Result<()> {
         let response = self
             .get(format!(
-                "{}/tasks/{}",
+                "{}/tasks/{}?{}",
                 self.addr,
-                tid.map_or("".to_string(), |uid| uid.to_string())
+                tid.map_or("".to_string(), |uid| uid.to_string()),
+                yaup::to_string(&task_filter).into_diagnostic()?
             ))
             .send()
             .into_diagnostic()?;
