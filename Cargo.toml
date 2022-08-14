@@ -23,6 +23,7 @@ serde_json = "1.0.66"
 indicatif = "0.16.2"
 inquire = "0.2.1"
 colored_json = "2.1.0"
+miette = { version = "5.3.0", features = ["fancy"] }
 
 [profile.release]
 opt-level = "z"  # Optimize for size.

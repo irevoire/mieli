@@ -8,8 +8,8 @@ use crate::{
     format::{write_json, write_response_full, write_response_headers},
     DocId, DumpId, TaskId, UpdateId,
 };
-use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
+use miette::{bail, miette, IntoDiagnostic, Result};
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
     header::{CONTENT_TYPE, USER_AGENT},
@@ -111,7 +111,8 @@ impl Meilisearch {
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -119,7 +120,8 @@ impl Meilisearch {
         // TODO: we should cycle to get ALL the documents
         let response = self
             .get(&format!("{}/indexes/{}/documents", self.addr, self.index))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -158,15 +160,15 @@ impl Meilisearch {
 
         let response = match filepath {
             Some(filepath) => {
-                let file = File::open(filepath)?;
-                client.body(file).send()?
+                let file = File::open(filepath).into_diagnostic()?;
+                client.body(file).send().into_diagnostic()?
             }
             None => {
                 // TODO: is this the only way to do it?
                 let mut buffer = Vec::new();
                 stdin().read_to_end(&mut buffer);
 
-                client.body(buffer).send()?
+                client.body(buffer).send().into_diagnostic()?
             }
         };
         self.handle_response(response)
@@ -175,7 +177,8 @@ impl Meilisearch {
     pub fn delete_all(&self) -> Result<()> {
         let response = self
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -185,7 +188,8 @@ impl Meilisearch {
                 "{}/indexes/{}/documents/{}",
                 self.addr, self.index, docid
             ))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -196,13 +200,14 @@ impl Meilisearch {
                 self.addr, self.index
             ))
             .json(docids)
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn search(&self, search: String) -> Result<()> {
         let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
-            serde_json::from_reader(stdin())?
+            serde_json::from_reader(stdin()).into_diagnostic()?
         } else {
             Map::new()
         };
@@ -213,7 +218,8 @@ impl Meilisearch {
             .post(format!("{}/indexes/{}/search", self.addr, self.index))
             .header("Content-Type", "application/json")
             .json(&value)
-            .send()?;
+            .send()
+            .into_diagnostic()?;
 
         self.handle_response(response)
     }
@@ -224,7 +230,7 @@ impl Meilisearch {
         }
 
         let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
-            serde_json::from_reader(stdin())?
+            serde_json::from_reader(stdin()).into_diagnostic()?
         } else {
             Map::new()
         };
@@ -238,7 +244,8 @@ impl Meilisearch {
     pub fn settings(&self) -> Result<()> {
         let response = if atty::is(atty::Stream::Stdin) {
             self.get(format!("{}/indexes/{}/settings", self.addr, self.index))
-                .send()?
+                .send()
+                .into_diagnostic()?
         } else {
             let mut buffer = Vec::new();
             stdin().read_to_end(&mut buffer);
@@ -248,14 +255,16 @@ impl Meilisearch {
                 .patch(&url)
                 .header("Content-Type", "application/json")
                 .body(buffer.clone())
-                .send()?;
+                .send()
+                .into_diagnostic()?;
 
             if response.status().as_u16() == 405 {
                 response = self
                     .post(url)
                     .header("Content-Type", "application/json")
                     .body(buffer)
-                    .send()?;
+                    .send()
+                    .into_diagnostic()?;
             }
             response
         };
@@ -264,7 +273,10 @@ impl Meilisearch {
     }
 
     pub fn get_all_indexes(&self) -> Result<()> {
-        let response = self.get(format!("{}/indexes", self.addr)).send()?;
+        let response = self
+            .get(format!("{}/indexes", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -272,7 +284,8 @@ impl Meilisearch {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .get(format!("{}/indexes/{}", self.addr, index))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -285,7 +298,8 @@ impl Meilisearch {
         let response = self
             .post(format!("{}/indexes", self.addr))
             .json(&body)
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -296,9 +310,9 @@ impl Meilisearch {
             body["primaryKey"] = json!(primary_key);
         }
         let url = format!("{}/indexes/{}", self.addr, index);
-        let mut response = self.patch(&url).json(&body).send()?;
+        let mut response = self.patch(&url).json(&body).send().into_diagnostic()?;
         if response.status().as_u16() == 405 {
-            response = self.post(url).send()?;
+            response = self.post(url).send().into_diagnostic()?;
         }
         self.handle_response(response)
     }
@@ -307,7 +321,8 @@ impl Meilisearch {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .delete(format!("{}/indexes/{}", self.addr, index))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -319,7 +334,8 @@ impl Meilisearch {
                 self.index,
                 uid.map_or("".to_string(), |uid| uid.to_string())
             ))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -330,45 +346,65 @@ impl Meilisearch {
                 self.addr,
                 tid.map_or("".to_string(), |uid| uid.to_string())
             ))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn create_dump(&self) -> Result<()> {
-        let response = self.post(format!("{}/dumps", self.addr)).send()?;
+        let response = self
+            .post(format!("{}/dumps", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
         let response = self
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
-            .send()?;
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn healthcheck(&self) -> Result<()> {
-        let response = self.get(format!("{}/health", self.addr)).send()?;
+        let response = self
+            .get(format!("{}/health", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn version(&self) -> Result<()> {
-        let response = self.get(format!("{}/version", self.addr)).send()?;
+        let response = self
+            .get(format!("{}/version", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn stats(&self) -> Result<()> {
-        let response = self.get(format!("{}/stats", self.addr)).send()?;
+        let response = self
+            .get(format!("{}/stats", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn get_keys(&self) -> Result<()> {
-        let response = self.get(format!("{}/keys", self.addr)).send()?;
+        let response = self
+            .get(format!("{}/keys", self.addr))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
     pub fn get_key(&self, key: Option<String>) -> Result<()> {
         if let Some(key) = key.or_else(|| self.key.clone()) {
-            let response = self.get(format!("{}/keys/{}", self.addr, key)).send()?;
+            let response = self
+                .get(format!("{}/keys/{}", self.addr, key))
+                .send()
+                .into_diagnostic()?;
             self.handle_response(response)
         } else {
             bail!("No key to retrieve")
@@ -377,11 +413,12 @@ impl Meilisearch {
 
     pub fn create_key(&self) -> Result<()> {
         if atty::isnt(atty::Stream::Stdin) {
-            let value: Map<String, Value> = serde_json::from_reader(stdin())?;
+            let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
             let response = self
                 .post(format!("{}/keys", self.addr))
                 .json(&value)
-                .send()?;
+                .send()
+                .into_diagnostic()?;
             self.handle_response(response)
         } else {
             bail!("You need to send a key. See `mieli template`.")
@@ -390,14 +427,15 @@ impl Meilisearch {
 
     pub fn update_key(&self, key: Option<String>) -> Result<()> {
         if atty::isnt(atty::Stream::Stdin) {
-            let value: Map<String, Value> = serde_json::from_reader(stdin())?;
-            let key = key.as_deref().or(value["key"].as_str()).ok_or(anyhow!(
+            let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
+            let key = key.as_deref().or(value["key"].as_str()).ok_or(miette!(
                 "You need to provide a key either in the json or as an argument"
             ))?;
             let response = self
                 .patch(format!("{}/keys/{}", self.addr, key))
                 .json(&value)
-                .send()?;
+                .send()
+                .into_diagnostic()?;
             self.handle_response(response)
         } else {
             bail!("You need to send a key. See `mieli template`.")
@@ -405,7 +443,10 @@ impl Meilisearch {
     }
 
     pub fn delete_key(&self, key: String) -> Result<()> {
-        let response = self.delete(format!("{}/keys/{}", self.addr, key)).send()?;
+        let response = self
+            .delete(format!("{}/keys/{}", self.addr, key))
+            .send()
+            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -416,7 +457,10 @@ impl Meilisearch {
           "indexes": ["mieli"],
           "expiresAt": "2021-11-13T00:00:00Z"
         });
-        println!("{}", colored_json::to_colored_json_auto(&json)?);
+        println!(
+            "{}",
+            colored_json::to_colored_json_auto(&json).into_diagnostic()?
+        );
         Ok(())
     }
 
@@ -438,8 +482,11 @@ impl Meilisearch {
             .or_else(|| response["taskUid"].as_i64())
         {
             loop {
-                let response = self.get(format!("{}/tasks/{}", self.addr, uid)).send()?;
-                let json = response.json::<Value>()?;
+                let response = self
+                    .get(format!("{}/tasks/{}", self.addr, uid))
+                    .send()
+                    .into_diagnostic()?;
+                let json = response.json::<Value>().into_diagnostic()?;
                 match json["status"].as_str() {
                     None => {
                         return Ok(());
@@ -460,8 +507,9 @@ impl Meilisearch {
                         "{}/indexes/{}/updates/{}",
                         self.addr, self.index, uid
                     ))
-                    .send()?;
-                let json = response.json::<Value>()?;
+                    .send()
+                    .into_diagnostic()?;
+                let json = response.json::<Value>().into_diagnostic()?;
                 match json["status"].as_str() {
                     None => {
                         return Ok(());

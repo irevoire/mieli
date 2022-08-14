@@ -1,5 +1,5 @@
-use anyhow::Result;
 use inquire::Text;
+use miette::{IntoDiagnostic, Result};
 use serde_json::{json, Map, Value};
 use std::io::stdout;
 use termion::{color, screen::AlternateScreen};
@@ -21,7 +21,8 @@ impl Meilisearch {
             })
             .with_placeholder(&base_search)
             .with_initial_value(&base_search)
-            .prompt()?;
+            .prompt()
+            .into_diagnostic()?;
 
         Ok(())
     }
