@@ -17,6 +17,7 @@ pub struct Options {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    /// Modify the `mieli` installation.
     #[clap(subcommand, name = "self")]
     Inner(Inner),
     /// Manipulate documents, add `--help` to see all the subcommands.

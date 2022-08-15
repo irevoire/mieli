@@ -18,14 +18,21 @@ use crate::options::Options;
 pub enum Inner {
     /// Generate the autocomplete file for your shell.
     AutoComplete { shell: Option<String> },
+    /// Download and install the new mieli version.
+    Upgrade,
 }
 
 impl Inner {
     pub fn execute(self) -> Result<()> {
         match self {
+            Inner::Upgrade => upgrade(),
             Inner::AutoComplete { shell } => auto_complete(shell),
         }
     }
+}
+
+pub fn upgrade() -> Result<()> {
+    bail!("Not implemented yet")
 }
 
 #[derive(Debug, Copy, Clone)]
