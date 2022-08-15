@@ -2,7 +2,8 @@ use clap::Parser;
 use serde::Serialize;
 
 use crate::{
-    meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, KeyCommand, TaskId, UpdateId,
+    inner::InnerCommand, meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, KeyCommand,
+    TaskId, UpdateId,
 };
 
 #[derive(Debug, Parser)]
@@ -17,11 +18,8 @@ pub struct Options {
 
 #[derive(Debug, Parser)]
 pub enum Command {
-    #[clap(name = "self")]
-    Inner {
-        #[clap(subcommand)]
-        command: InnerCommand,
-    },
+    #[clap(subcommand, name = "self")]
+    Inner(InnerCommand),
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
     Documents(DocumentsCommand),
@@ -92,10 +90,4 @@ pub struct TasksFilter {
     /// Filter tasks by their index uid.
     #[clap(long, name = "uid")]
     uid: Option<String>,
-}
-
-#[derive(Debug, Parser)]
-pub enum InnerCommand {
-    /// Generate the autocomplete file for your shell.
-    AutoComplete { shell: Option<String> },
 }

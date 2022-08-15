@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use clap::CommandFactory;
+use clap::{CommandFactory, Parser};
 use clap_complete::{
     generate,
     shells::{Bash, Elvish, Fish, Zsh},
@@ -13,6 +13,20 @@ use dialoguer::Confirm;
 use miette::{bail, IntoDiagnostic, Result};
 
 use crate::options::Options;
+
+#[derive(Debug, Parser)]
+pub enum InnerCommand {
+    /// Generate the autocomplete file for your shell.
+    AutoComplete { shell: Option<String> },
+}
+
+impl InnerCommand {
+    pub fn execute(self) -> Result<()> {
+        match self {
+            InnerCommand::AutoComplete { shell } => auto_complete(shell),
+        }
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub enum Shell {

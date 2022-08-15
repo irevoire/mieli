@@ -11,12 +11,12 @@ mod options;
 
 pub use crate::documents::DocumentsCommand;
 pub use crate::indexes::IndexesCommand;
+pub use crate::inner::InnerCommand;
 pub use crate::keys::KeyCommand;
 pub use crate::meilisearch::Meilisearch;
-pub use crate::options::{Command, InnerCommand, Options};
+pub use crate::options::{Command, Options};
 
 use clap::Parser;
-use inner::auto_complete;
 use miette::Result;
 
 type UpdateId = u32;
@@ -28,9 +28,7 @@ fn main() -> Result<()> {
     let meili = opt.meilisearch;
 
     match opt.command {
-        Command::Inner { command } => match command {
-            InnerCommand::AutoComplete { shell } => auto_complete(shell),
-        },
+        Command::Inner(command) => command.execute(),
         Command::Documents(command) => command.execute(meili),
         Command::Search {
             search_terms,
