@@ -17,6 +17,11 @@ pub struct Options {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    #[clap(name = "self")]
+    Inner {
+        #[clap(subcommand)]
+        command: InnerCommand,
+    },
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(aliases = &["document", "doc", "docs", "d"])]
     Documents {
@@ -224,4 +229,10 @@ pub enum KeyCommand {
     },
     /// Show an example of a valid json you can send to create a key.
     Template,
+}
+
+#[derive(Debug, Parser)]
+pub enum InnerCommand {
+    /// Generate the autocomplete file for your shell.
+    AutoComplete { shell: Option<String> },
 }

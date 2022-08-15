@@ -3,14 +3,15 @@
 #![allow(unused_variables)]
 
 mod format;
+mod inner;
 mod interactive_search;
 mod meilisearch;
 mod options;
 
-use options::{Command, DocumentsCommand, IndexesCommand, KeyCommand, Options};
-
 use clap::Parser;
+use inner::auto_complete;
 use miette::Result;
+use options::{Command, DocumentsCommand, IndexesCommand, InnerCommand, KeyCommand, Options};
 
 type DocId = String;
 type UpdateId = u32;
@@ -22,6 +23,9 @@ fn main() -> Result<()> {
     let meili = opt.meilisearch;
 
     match opt.command {
+        Command::Inner { command } => match command {
+            InnerCommand::AutoComplete { shell } => auto_complete(shell),
+        },
         Command::Documents { command } => match command {
             DocumentsCommand::Get {
                 document_id: None,
