@@ -15,15 +15,15 @@ use miette::{bail, IntoDiagnostic, Result};
 use crate::options::Options;
 
 #[derive(Debug, Parser)]
-pub enum InnerCommand {
+pub enum Inner {
     /// Generate the autocomplete file for your shell.
     AutoComplete { shell: Option<String> },
 }
 
-impl InnerCommand {
+impl Inner {
     pub fn execute(self) -> Result<()> {
         match self {
-            InnerCommand::AutoComplete { shell } => auto_complete(shell),
+            Inner::AutoComplete { shell } => auto_complete(shell),
         }
     }
 }

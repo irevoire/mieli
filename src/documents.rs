@@ -12,7 +12,7 @@ use std::{
 pub type DocId = String;
 
 #[derive(Debug, Parser)]
-pub enum DocumentsCommand {
+pub enum Documents {
     /// Get one document. If no argument are specified it returns all documents.
     #[clap(aliases = &["g"])]
     Get {
@@ -73,28 +73,28 @@ pub struct GetDocumentParameter {
     fields: Option<String>,
 }
 
-impl DocumentsCommand {
+impl Documents {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            DocumentsCommand::Get {
+            Documents::Get {
                 document_id: None,
                 param,
             } => meili.get_all_documents(param),
-            DocumentsCommand::Get {
+            Documents::Get {
                 document_id: Some(id),
                 ..
             } => meili.get_one_document(id),
-            DocumentsCommand::Add {
+            Documents::Add {
                 content_type,
                 file,
                 primary,
             } => meili.index_documents(file, primary, content_type, false),
-            DocumentsCommand::Update {
+            Documents::Update {
                 content_type,
                 file,
                 primary,
             } => meili.index_documents(file, primary, content_type, true),
-            DocumentsCommand::Delete { document_ids } => match document_ids.as_slice() {
+            Documents::Delete { document_ids } => match document_ids.as_slice() {
                 [] => meili.delete_all(),
                 [id] => meili.delete_one(id.clone()),
                 ids => meili.delete_batch(ids),

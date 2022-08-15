@@ -7,7 +7,7 @@ use serde_json::{json, Map, Value};
 use crate::Meilisearch;
 
 #[derive(Debug, Parser)]
-pub enum KeyCommand {
+pub enum Key {
     /// List all keys.
     #[clap(aliases = &["all"])]
     List,
@@ -35,15 +35,15 @@ pub enum KeyCommand {
     Template,
 }
 
-impl KeyCommand {
+impl Key {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            KeyCommand::List => meili.get_keys(),
-            KeyCommand::Get { k } => meili.get_key(k),
-            KeyCommand::Create => meili.create_key(),
-            KeyCommand::Update { k } => meili.update_key(k),
-            KeyCommand::Delete { k } => meili.delete_key(k),
-            KeyCommand::Template => meili.template(),
+            Key::List => meili.get_keys(),
+            Key::Get { k } => meili.get_key(k),
+            Key::Create => meili.create_key(),
+            Key::Update { k } => meili.update_key(k),
+            Key::Delete { k } => meili.delete_key(k),
+            Key::Template => meili.template(),
         }
     }
 }

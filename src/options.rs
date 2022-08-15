@@ -2,8 +2,7 @@ use clap::Parser;
 use serde::Serialize;
 
 use crate::{
-    inner::InnerCommand, meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, KeyCommand,
-    TaskId, UpdateId,
+    inner::Inner, meilisearch::Meilisearch, Documents, IndexesCommand, Key, TaskId, UpdateId,
 };
 
 #[derive(Debug, Parser)]
@@ -19,10 +18,10 @@ pub struct Options {
 #[derive(Debug, Parser)]
 pub enum Command {
     #[clap(subcommand, name = "self")]
-    Inner(InnerCommand),
+    Inner(Inner),
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
-    Documents(DocumentsCommand),
+    Documents(Documents),
     /// Create a dump or get the status of a dump
     Dump {
         /// The dump you want info from
@@ -70,7 +69,7 @@ pub enum Command {
     Index(IndexesCommand),
     /// Get the keys
     #[clap(subcommand, aliases = &["keys", "k"])]
-    Key(KeyCommand),
+    Key(Key),
 }
 
 #[derive(Debug, Parser, Serialize)]
