@@ -4,7 +4,7 @@ use serde_json::{json, Map, Value};
 use std::io::stdout;
 use termion::{color, screen::AlternateScreen};
 
-use crate::meilisearch::Meilisearch;
+use crate::Meilisearch;
 
 impl Meilisearch {
     pub fn run_interactive_search(
@@ -12,7 +12,7 @@ impl Meilisearch {
         base_search: String,
         base_search_config: Map<String, Value>,
     ) -> Result<()> {
-        let screen = AlternateScreen::from(stdout());
+        let _screen = AlternateScreen::from(stdout());
         let available_lines = termion::terminal_size().expect("Unsupported terminal").1;
 
         Text::new("Search:")

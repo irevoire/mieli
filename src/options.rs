@@ -1,9 +1,9 @@
-use std::path::PathBuf;
-
 use clap::Parser;
 use serde::Serialize;
 
-use crate::{meilisearch::Meilisearch, DocId, TaskId, UpdateId};
+use crate::{
+    meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, KeyCommand, TaskId, UpdateId,
+};
 
 #[derive(Debug, Parser)]
 #[clap(about = "A stupid wrapper around meilisearch")]
@@ -23,11 +23,8 @@ pub enum Command {
         command: InnerCommand,
     },
     /// Manipulate documents, add `--help` to see all the subcommands.
-    #[clap(aliases = &["document", "doc", "docs", "d"])]
-    Documents {
-        #[clap(subcommand)]
-        command: DocumentsCommand,
-    },
+    #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
+    Documents(DocumentsCommand),
     /// Create a dump or get the status of a dump
     Dump {
         /// The dump you want info from
@@ -71,17 +68,11 @@ pub enum Command {
     #[clap(aliases = &["set", "setting"])]
     Settings,
     /// Manipulate indexes, add `--help` to see all the subcommands.
-    #[clap(aliases = &["indexes", "i"])]
-    Index {
-        #[clap(subcommand)]
-        command: IndexesCommand,
-    },
+    #[clap(subcommand, aliases = &["indexes", "i"])]
+    Index(IndexesCommand),
     /// Get the keys
-    #[clap(aliases = &["keys", "k"])]
-    Key {
-        #[clap(subcommand)]
-        command: KeyCommand,
-    },
+    #[clap(subcommand, aliases = &["keys", "k"])]
+    Key(KeyCommand),
 }
 
 #[derive(Debug, Parser, Serialize)]
@@ -101,134 +92,6 @@ pub struct TasksFilter {
     /// Filter tasks by their index uid.
     #[clap(long, name = "uid")]
     uid: Option<String>,
-}
-
-#[derive(Debug, Parser, Serialize)]
-pub struct GetDocumentParameter {
-    /// Number of documents to return.
-    #[clap(long, aliases = &["limits"])]
-    limit: Option<usize>,
-    /// Skip the n first documents.
-    #[clap(long)]
-    from: Option<usize>,
-    /// Select fields from the documents.
-    #[clap(long, aliases = &["field"])]
-    fields: Option<String>,
-}
-
-#[derive(Debug, Parser)]
-pub enum DocumentsCommand {
-    /// Get one document. If no argument are specified it returns all documents.
-    #[clap(aliases = &["g"])]
-    Get {
-        /// The id of the document you want to retrieve
-        document_id: Option<DocId>,
-        /// Query parameters.
-        #[clap(flatten)]
-        param: GetDocumentParameter,
-    },
-    /// Add documents with the `post` verb
-    /// You can pipe your documents in the command
-    /// Will try to infer the content-type from the file extension if it fail
-    /// it'll be set as json.
-    #[clap(aliases = &["a"])]
-    Add {
-        /// Set the content-type of your file.
-        #[clap(short)]
-        content_type: Option<String>,
-        /// The primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-        /// The file you want to send
-        file: Option<PathBuf>,
-    },
-    /// Replace documents with the `put` verb
-    /// You can pipe your documents in the command
-    /// Will try to infer the content-type from the file extension if it fail
-    /// it'll be set as json.
-    #[clap(aliases = &["u"])]
-    Update {
-        /// Set the content-type of your file
-        #[clap(short)]
-        content_type: Option<String>,
-        /// The primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-        /// The file you want to send
-        file: Option<PathBuf>,
-    },
-    /// Delete documents. If no argument are specified all documents are deleted.
-    #[clap(aliases = &["d"])]
-    Delete {
-        /// The list of document ids you want to delete
-        document_ids: Vec<DocId>,
-    },
-}
-
-#[derive(Debug, Parser)]
-pub enum IndexesCommand {
-    /// List all indexes.
-    #[clap(aliases = &["all"])]
-    List,
-    /// Get an index, by default use the index provided by `-i`.
-    Get {
-        /// The index you want to retrieve.
-        #[clap(name = "idx")]
-        index: Option<String>,
-    },
-    /// Create an index, by default use the index provided by `-i`.
-    Create {
-        /// The index you want to create.
-        #[clap(name = "idx")]
-        index: Option<String>,
-        /// Primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-    },
-    /// Update an index, by default use the index provided by `-i`.
-    Update {
-        /// The index you want to update.
-        #[clap(name = "idx")]
-        index: Option<String>,
-        /// Primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-    },
-    /// Delete an index, by default use the index provided by `-i`.
-    Delete {
-        /// The index you want to delete.
-        #[clap(name = "idx")]
-        index: Option<String>,
-    },
-}
-
-#[derive(Debug, Parser)]
-pub enum KeyCommand {
-    /// List all keys.
-    #[clap(aliases = &["all"])]
-    List,
-    /// Get a key, by default use the key provided by `-k`.
-    Get {
-        /// The key you want to retrieve.
-        k: Option<String>,
-    },
-    /// Create a key. The json needs to be piped in the command.
-    #[clap(aliases = &["post"])]
-    Create,
-    /// Update a key. The json needs to be piped in the command.
-    #[clap(aliases = &["patch"])]
-    Update {
-        /// The key you want to update. If you don't provide
-        /// it here you need to send it in the json.
-        k: Option<String>,
-    },
-    /// Delete a key.
-    Delete {
-        /// The key you want to delete.
-        k: String,
-    },
-    /// Show an example of a valid json you can send to create a key.
-    Template,
 }
 
 #[derive(Debug, Parser)]

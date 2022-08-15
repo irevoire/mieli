@@ -1,17 +1,13 @@
-use std::{
-    fs::File,
-    io::{stdin, Read},
-    path::PathBuf,
-};
+use std::io::{stdin, Read};
 
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
-    options::{GetDocumentParameter, TasksFilter},
-    DocId, DumpId, TaskId, UpdateId,
+    options::TasksFilter,
+    DumpId, TaskId, UpdateId,
 };
 use clap::Parser;
 use indicatif::ProgressBar;
-use miette::{bail, miette, IntoDiagnostic, Result};
+use miette::{IntoDiagnostic, Result};
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
     header::{CONTENT_TYPE, USER_AGENT},
@@ -106,110 +102,6 @@ impl Meilisearch {
         req_builder.header(USER_AGENT, &self.user_agent)
     }
 
-    pub fn get_one_document(&self, docid: DocId) -> Result<()> {
-        let response = self
-            .get(format!(
-                "{}/indexes/{}/documents/{}",
-                self.addr, self.index, docid
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
-        let response = self
-            .get(&format!(
-                "{}/indexes/{}/documents?{}",
-                self.addr,
-                self.index,
-                yaup::to_string(&params).into_diagnostic()?
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn index_documents(
-        &self,
-        filepath: Option<PathBuf>,
-        primary_key: Option<String>,
-        content_type: Option<String>,
-        reindex: bool,
-    ) -> Result<()> {
-        let url = format!("{}/indexes/{}/documents", self.addr, self.index);
-        let client = match reindex {
-            false => self.post(url),
-            true => self.put(url),
-        };
-        let client = if let Some(content_type) = content_type {
-            client.header(CONTENT_TYPE, content_type)
-        } else {
-            match filepath
-                .as_ref()
-                .and_then(|filepath| filepath.extension())
-                .and_then(|ext| ext.to_str())
-            {
-                Some("csv") => client.header(CONTENT_TYPE, "text/csv"),
-                Some("jsonl") | Some("ndjson") | Some("jsonlines") => {
-                    client.header(CONTENT_TYPE, "text/x-ndjson")
-                }
-                _ => client.header(CONTENT_TYPE, "application/json"),
-            }
-        };
-        let client = if let Some(primary_key) = primary_key {
-            client.query(&[("primaryKey", primary_key)])
-        } else {
-            client
-        };
-
-        let response = match filepath {
-            Some(filepath) => {
-                let file = File::open(filepath).into_diagnostic()?;
-                client.body(file).send().into_diagnostic()?
-            }
-            None if atty::isnt(atty::Stream::Stdin) => {
-                let mut buffer = Vec::new();
-                stdin().read_to_end(&mut buffer);
-
-                client.body(buffer).send().into_diagnostic()?
-            }
-            None => bail!("Did you forgot to pipe something in the command?"),
-        };
-        self.handle_response(response)
-    }
-
-    pub fn delete_all(&self) -> Result<()> {
-        let response = self
-            .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn delete_one(&self, docid: DocId) -> Result<()> {
-        let response = self
-            .delete(format!(
-                "{}/indexes/{}/documents/{}",
-                self.addr, self.index, docid
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
-        let response = self
-            .post(format!(
-                "{}/indexes/{}/documents/delete-batch",
-                self.addr, self.index
-            ))
-            .json(docids)
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
     pub fn search(&self, search: String) -> Result<()> {
         let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
             serde_json::from_reader(stdin()).into_diagnostic()?
@@ -253,7 +145,7 @@ impl Meilisearch {
                 .into_diagnostic()?
         } else {
             let mut buffer = Vec::new();
-            stdin().read_to_end(&mut buffer);
+            stdin().read_to_end(&mut buffer).into_diagnostic()?;
 
             let url = format!("{}/indexes/{}/settings", self.addr, self.index);
             let mut response = self
@@ -274,60 +166,6 @@ impl Meilisearch {
             response
         };
 
-        self.handle_response(response)
-    }
-
-    pub fn get_all_indexes(&self) -> Result<()> {
-        let response = self
-            .get(format!("{}/indexes", self.addr))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn get_index(&self, index: Option<String>) -> Result<()> {
-        let index = index.unwrap_or_else(|| self.index.to_string());
-        let response = self
-            .get(format!("{}/indexes/{}", self.addr, index))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn create_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
-        let index = index.unwrap_or_else(|| self.index.to_string());
-        let mut body = json!({ "uid": index });
-        if let Some(primary_key) = primary_key {
-            body["primaryKey"] = json!(primary_key);
-        }
-        let response = self
-            .post(format!("{}/indexes", self.addr))
-            .json(&body)
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
-        let index = index.unwrap_or_else(|| self.index.to_string());
-        let mut body = json!({});
-        if let Some(primary_key) = primary_key {
-            body["primaryKey"] = json!(primary_key);
-        }
-        let url = format!("{}/indexes/{}", self.addr, index);
-        let mut response = self.patch(&url).json(&body).send().into_diagnostic()?;
-        if response.status().as_u16() == 405 {
-            response = self.post(url).send().into_diagnostic()?;
-        }
-        self.handle_response(response)
-    }
-
-    pub fn delete_index(&self, index: Option<String>) -> Result<()> {
-        let index = index.unwrap_or_else(|| self.index.to_string());
-        let response = self
-            .delete(format!("{}/indexes/{}", self.addr, index))
-            .send()
-            .into_diagnostic()?;
         self.handle_response(response)
     }
 
@@ -397,79 +235,6 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn get_keys(&self) -> Result<()> {
-        let response = self
-            .get(format!("{}/keys", self.addr))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn get_key(&self, key: Option<String>) -> Result<()> {
-        if let Some(key) = key.or_else(|| self.key.clone()) {
-            let response = self
-                .get(format!("{}/keys/{}", self.addr, key))
-                .send()
-                .into_diagnostic()?;
-            self.handle_response(response)
-        } else {
-            bail!("No key to retrieve")
-        }
-    }
-
-    pub fn create_key(&self) -> Result<()> {
-        if atty::isnt(atty::Stream::Stdin) {
-            let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
-            let response = self
-                .post(format!("{}/keys", self.addr))
-                .json(&value)
-                .send()
-                .into_diagnostic()?;
-            self.handle_response(response)
-        } else {
-            bail!("You need to send a key. See `mieli template`.")
-        }
-    }
-
-    pub fn update_key(&self, key: Option<String>) -> Result<()> {
-        if atty::isnt(atty::Stream::Stdin) {
-            let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
-            let key = key.as_deref().or(value["key"].as_str()).ok_or(miette!(
-                "You need to provide a key either in the json or as an argument"
-            ))?;
-            let response = self
-                .patch(format!("{}/keys/{}", self.addr, key))
-                .json(&value)
-                .send()
-                .into_diagnostic()?;
-            self.handle_response(response)
-        } else {
-            bail!("You need to send a key. See `mieli template`.")
-        }
-    }
-
-    pub fn delete_key(&self, key: String) -> Result<()> {
-        let response = self
-            .delete(format!("{}/keys/{}", self.addr, key))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn template(&self) -> Result<()> {
-        let json = json!({
-          "description": "Add documents key",
-          "actions": ["documents.add"],
-          "indexes": ["mieli"],
-          "expiresAt": "2021-11-13T00:00:00Z"
-        });
-        println!(
-            "{}",
-            colored_json::to_colored_json_auto(&json).into_diagnostic()?
-        );
-        Ok(())
-    }
-
     pub fn handle_response(&self, response: Response) -> Result<()> {
         if response.status() == StatusCode::NO_CONTENT {
             return write_response_headers(&response, self.verbose);
@@ -480,8 +245,6 @@ impl Meilisearch {
         }
 
         let spinner = ProgressBar::new_spinner();
-
-        let buffer = String::new();
 
         if let Some(uid) = response["uid"]
             .as_i64()
@@ -499,7 +262,7 @@ impl Meilisearch {
                     }
                     Some(msg @ "succeeded") | Some(msg @ "failed") => {
                         spinner.finish_with_message(msg.to_string());
-                        write_json(json);
+                        write_json(json)?;
                         break;
                     }
                     Some(status) => spinner.set_message(status.to_string()),
@@ -522,7 +285,7 @@ impl Meilisearch {
                     }
                     Some(msg @ "processed") | Some(msg @ "failed") => {
                         spinner.finish_with_message(msg.to_string());
-                        write_json(json);
+                        write_json(json)?;
                         break;
                     }
                     Some(status) => spinner.set_message(status.to_string()),
