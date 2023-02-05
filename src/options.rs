@@ -82,12 +82,12 @@ pub struct TasksFilter {
     #[clap(long)]
     from: Option<usize>,
     /// Filter tasks by their status.
-    #[clap(long)]
-    status: Option<String>,
+    #[clap(long, aliases = &["status"])]
+    statuses: Option<String>,
     /// Filter tasks by their type.
-    #[clap(long, aliases = &["ty"])]
-    r#type: Option<String>,
+    #[clap(long, aliases = &["ty", "type"])]
+    types: Option<String>,
     /// Filter tasks by their index uid.
-    #[clap(long, name = "uid")]
-    uid: Option<String>,
+    #[clap(long, aliases = &["uid"])]
+    uids: Option<String>,
 }
