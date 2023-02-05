@@ -23,35 +23,36 @@ type UpdateId = u32;
 type TaskId = u32;
 type DumpId = String;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let opt = Options::from_args();
     let meili = opt.meilisearch;
 
     match opt.command {
-        Command::Inner(command) => command.execute(),
-        Command::Documents(command) => command.execute(meili),
+        Command::Inner(command) => command.execute().await,
+        Command::Documents(command) => command.execute(meili).await,
         Command::Search {
             search_terms,
             interactive: false,
-        } => meili.search(search_terms.join(" ")),
+        } => meili.search(search_terms.join(" ")).await,
         Command::Search {
             search_terms,
             interactive: true,
-        } => meili.interactive_search(search_terms.join(" ")),
-        Command::Settings => meili.settings(),
-        Command::Index(command) => command.execute(meili),
-        Command::Dump { dump_id: None } => meili.create_dump(),
+        } => meili.interactive_search(search_terms.join(" ")).await,
+        Command::Settings => meili.settings().await,
+        Command::Index(command) => command.execute(meili).await,
+        Command::Dump { dump_id: None } => meili.create_dump().await,
         Command::Dump {
             dump_id: Some(dump_id),
-        } => meili.dump_status(dump_id),
-        Command::Health => meili.healthcheck(),
-        Command::Version => meili.version(),
-        Command::Stats => meili.stats(),
-        Command::Status { update_id } => meili.status(update_id),
+        } => meili.dump_status(dump_id).await,
+        Command::Health => meili.healthcheck().await,
+        Command::Version => meili.version().await,
+        Command::Stats => meili.stats().await,
+        Command::Status { update_id } => meili.status(update_id).await,
         Command::Tasks {
             task_id,
             task_filter,
-        } => meili.tasks(task_id, task_filter),
-        Command::Key(command) => command.execute(meili),
+        } => meili.tasks(task_id, task_filter).await,
+        Command::Key(command) => command.execute(meili).await,
     }
 }

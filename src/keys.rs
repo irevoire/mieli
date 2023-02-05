@@ -36,20 +36,20 @@ pub enum Key {
 }
 
 impl Key {
-    pub fn execute(self, meili: Meilisearch) -> Result<()> {
+    pub async fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            Key::List => meili.get_keys(),
-            Key::Get { k } => meili.get_key(k),
-            Key::Create => meili.create_key(),
-            Key::Update { k } => meili.update_key(k),
-            Key::Delete { k } => meili.delete_key(k),
-            Key::Template => meili.template(),
+            Key::List => meili.get_keys().await,
+            Key::Get { k } => meili.get_key(k).await,
+            Key::Create => meili.create_key().await,
+            Key::Update { k } => meili.update_key(k).await,
+            Key::Delete { k } => meili.delete_key(k).await,
+            Key::Template => meili.template().await,
         }
     }
 }
 
 impl Meilisearch {
-    fn get_keys(&self) -> Result<()> {
+    async fn get_keys(&self) -> Result<()> {
         let response = self
             .get(format!("{}/keys", self.addr))
             .send()
@@ -57,7 +57,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn get_key(&self, key: Option<String>) -> Result<()> {
+    async fn get_key(&self, key: Option<String>) -> Result<()> {
         if let Some(key) = key.or_else(|| self.key.clone()) {
             let response = self
                 .get(format!("{}/keys/{}", self.addr, key))
@@ -69,7 +69,7 @@ impl Meilisearch {
         }
     }
 
-    fn create_key(&self) -> Result<()> {
+    async fn create_key(&self) -> Result<()> {
         if atty::isnt(atty::Stream::Stdin) {
             let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
             let response = self
@@ -83,7 +83,7 @@ impl Meilisearch {
         }
     }
 
-    fn update_key(&self, key: Option<String>) -> Result<()> {
+    async fn update_key(&self, key: Option<String>) -> Result<()> {
         if atty::isnt(atty::Stream::Stdin) {
             let value: Map<String, Value> = serde_json::from_reader(stdin()).into_diagnostic()?;
             let key = key.as_deref().or(value["key"].as_str()).ok_or(miette!(
@@ -100,7 +100,7 @@ impl Meilisearch {
         }
     }
 
-    fn delete_key(&self, key: String) -> Result<()> {
+    async fn delete_key(&self, key: String) -> Result<()> {
         let response = self
             .delete(format!("{}/keys/{}", self.addr, key))
             .send()
@@ -108,7 +108,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn template(&self) -> Result<()> {
+    async fn template(&self) -> Result<()> {
         let json = json!({
           "description": "Add documents key",
           "actions": ["documents.add"],

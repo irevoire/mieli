@@ -102,7 +102,7 @@ impl Meilisearch {
         req_builder.header(USER_AGENT, &self.user_agent)
     }
 
-    pub fn search(&self, search: String) -> Result<()> {
+    pub async fn search(&self, search: String) -> Result<()> {
         let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
             serde_json::from_reader(stdin()).into_diagnostic()?
         } else {
@@ -121,9 +121,9 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn interactive_search(&self, search: String) -> Result<()> {
+    pub async fn interactive_search(&self, search: String) -> Result<()> {
         if atty::isnt(atty::Stream::Stdout) {
-            return self.search(search);
+            return self.search(search).await;
         }
 
         let mut value: Map<String, Value> = if atty::isnt(atty::Stream::Stdin) {
@@ -138,7 +138,7 @@ impl Meilisearch {
         self.run_interactive_search(search, value)
     }
 
-    pub fn settings(&self) -> Result<()> {
+    pub async fn settings(&self) -> Result<()> {
         let response = if atty::is(atty::Stream::Stdin) {
             self.get(format!("{}/indexes/{}/settings", self.addr, self.index))
                 .send()
@@ -169,7 +169,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn status(&self, uid: Option<UpdateId>) -> Result<()> {
+    pub async fn status(&self, uid: Option<UpdateId>) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/updates/{}",
@@ -182,7 +182,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn tasks(&self, tid: Option<TaskId>, task_filter: TasksFilter) -> Result<()> {
+    pub async fn tasks(&self, tid: Option<TaskId>, task_filter: TasksFilter) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/tasks/{}?{}",
@@ -195,7 +195,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn create_dump(&self) -> Result<()> {
+    pub async fn create_dump(&self) -> Result<()> {
         let response = self
             .post(format!("{}/dumps", self.addr))
             .send()
@@ -203,7 +203,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
+    pub async fn dump_status(&self, dump_id: DumpId) -> Result<()> {
         let response = self
             .get(format!("{}/dumps/{}/status", self.addr, dump_id))
             .send()
@@ -211,7 +211,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn healthcheck(&self) -> Result<()> {
+    pub async fn healthcheck(&self) -> Result<()> {
         let response = self
             .get(format!("{}/health", self.addr))
             .send()
@@ -219,7 +219,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn version(&self) -> Result<()> {
+    pub async fn version(&self) -> Result<()> {
         let response = self
             .get(format!("{}/version", self.addr))
             .send()
@@ -227,7 +227,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn stats(&self) -> Result<()> {
+    pub async fn stats(&self) -> Result<()> {
         let response = self
             .get(format!("{}/stats", self.addr))
             .send()

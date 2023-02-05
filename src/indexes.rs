@@ -42,19 +42,19 @@ pub enum IndexesCommand {
 }
 
 impl IndexesCommand {
-    pub fn execute(self, meili: Meilisearch) -> Result<()> {
+    pub async fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            IndexesCommand::List => meili.get_all_indexes(),
-            IndexesCommand::Get { index } => meili.get_index(index),
-            IndexesCommand::Create { index, primary } => meili.create_index(index, primary),
-            IndexesCommand::Update { index, primary } => meili.update_index(index, primary),
-            IndexesCommand::Delete { index } => meili.delete_index(index),
+            IndexesCommand::List => meili.get_all_indexes().await,
+            IndexesCommand::Get { index } => meili.get_index(index).await,
+            IndexesCommand::Create { index, primary } => meili.create_index(index, primary).await,
+            IndexesCommand::Update { index, primary } => meili.update_index(index, primary).await,
+            IndexesCommand::Delete { index } => meili.delete_index(index).await,
         }
     }
 }
 
 impl Meilisearch {
-    fn get_all_indexes(&self) -> Result<()> {
+    async fn get_all_indexes(&self) -> Result<()> {
         let response = self
             .get(format!("{}/indexes", self.addr))
             .send()
@@ -62,7 +62,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn get_index(&self, index: Option<String>) -> Result<()> {
+    async fn get_index(&self, index: Option<String>) -> Result<()> {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .get(format!("{}/indexes/{}", self.addr, index))
@@ -71,7 +71,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn create_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
+    async fn create_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let mut body = json!({ "uid": index });
         if let Some(primary_key) = primary_key {
@@ -85,7 +85,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
+    async fn update_index(&self, index: Option<String>, primary_key: Option<String>) -> Result<()> {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let mut body = json!({});
         if let Some(primary_key) = primary_key {
@@ -99,7 +99,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn delete_index(&self, index: Option<String>) -> Result<()> {
+    async fn delete_index(&self, index: Option<String>) -> Result<()> {
         let index = index.unwrap_or_else(|| self.index.to_string());
         let response = self
             .delete(format!("{}/indexes/{}", self.addr, index))

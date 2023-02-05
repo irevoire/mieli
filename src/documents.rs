@@ -1,5 +1,6 @@
 use crate::Meilisearch;
 use clap::Parser;
+use meilisearch_sdk::{documents::DocumentsQuery, indexes::Index, Client};
 use miette::{bail, IntoDiagnostic, Result};
 use reqwest::header::CONTENT_TYPE;
 use serde::Serialize;
@@ -74,37 +75,45 @@ pub struct GetDocumentParameter {
 }
 
 impl Documents {
-    pub fn execute(self, meili: Meilisearch) -> Result<()> {
+    pub async fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
             Documents::Get {
                 document_id: None,
                 param,
-            } => meili.get_all_documents(param),
+            } => meili.get_all_documents(param).await,
             Documents::Get {
                 document_id: Some(id),
                 ..
-            } => meili.get_one_document(id),
+            } => meili.get_one_document(id).await,
             Documents::Add {
                 content_type,
                 file,
                 primary,
-            } => meili.index_documents(file, primary, content_type, false),
+            } => {
+                meili
+                    .index_documents(file, primary, content_type, false)
+                    .await
+            }
             Documents::Update {
                 content_type,
                 file,
                 primary,
-            } => meili.index_documents(file, primary, content_type, true),
+            } => {
+                meili
+                    .index_documents(file, primary, content_type, true)
+                    .await
+            }
             Documents::Delete { document_ids } => match document_ids.as_slice() {
-                [] => meili.delete_all(),
-                [id] => meili.delete_one(id.clone()),
-                ids => meili.delete_batch(ids),
+                [] => meili.delete_all().await,
+                [id] => meili.delete_one(id.clone()).await,
+                ids => meili.delete_batch(ids).await,
             },
         }
     }
 }
 
 impl Meilisearch {
-    fn get_one_document(&self, docid: DocId) -> Result<()> {
+    async fn get_one_document(&self, docid: DocId) -> Result<()> {
         let response = self
             .get(format!(
                 "{}/indexes/{}/documents/{}",
@@ -115,20 +124,34 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
-        let response = self
-            .get(&format!(
-                "{}/indexes/{}/documents?{}",
-                self.addr,
-                self.index,
-                yaup::to_string(&params).into_diagnostic()?
-            ))
-            .send()
+    async fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
+        let client = Client::new(&self.addr, self.key.clone().unwrap_or_default());
+        let index = client.index(&self.index);
+
+        let response = index
+            .get_documents_with(&DocumentsQuery {
+                index: &index,
+                offset: params.from,
+                limit: params.limit,
+                fields: params.fields.map(|fields| vec![fields.as_ref()]),
+            })
+            .await
             .into_diagnostic()?;
+
+        // let response = self
+        //     .get(&format!(
+        //         "{}/indexes/{}/documents?{}",
+        //         self.addr,
+        //         self.index,
+        //         yaup::to_string(&params).into_diagnostic()?
+        //     ))
+        //     .send()
+        //     .into_diagnostic()?;
+
         self.handle_response(response)
     }
 
-    fn index_documents(
+    async fn index_documents(
         &self,
         filepath: Option<PathBuf>,
         primary_key: Option<String>,
@@ -177,7 +200,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn delete_all(&self) -> Result<()> {
+    async fn delete_all(&self) -> Result<()> {
         let response = self
             .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
             .send()
@@ -185,7 +208,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn delete_one(&self, docid: DocId) -> Result<()> {
+    async fn delete_one(&self, docid: DocId) -> Result<()> {
         let response = self
             .delete(format!(
                 "{}/indexes/{}/documents/{}",
@@ -196,7 +219,7 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
+    async fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
         let response = self
             .post(format!(
                 "{}/indexes/{}/documents/delete-batch",

@@ -23,15 +23,15 @@ pub enum Inner {
 }
 
 impl Inner {
-    pub fn execute(self) -> Result<()> {
+    pub async fn execute(self) -> Result<()> {
         match self {
-            Inner::Upgrade => upgrade(),
-            Inner::AutoComplete { shell } => auto_complete(shell),
+            Inner::Upgrade => upgrade().await,
+            Inner::AutoComplete { shell } => auto_complete(shell).await,
         }
     }
 }
 
-pub fn upgrade() -> Result<()> {
+pub async fn upgrade() -> Result<()> {
     bail!("Not implemented yet")
 }
 
@@ -98,7 +98,7 @@ impl Display for Shell {
     }
 }
 
-pub fn auto_complete(shell: Option<String>) -> Result<()> {
+pub async fn auto_complete(shell: Option<String>) -> Result<()> {
     if let Some(shell) = shell.or_else(|| std::env::var("SHELL").ok()) {
         let shell = match shell.rsplit('/').next() {
             Some("bash") => Shell::Bash,

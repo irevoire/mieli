@@ -28,6 +28,8 @@ serde = { version = "1.0.143", features = ["serde_derive"] }
 serde-cs = "0.2.4"
 clap_complete = "3.2.4"
 dialoguer = "0.10.2"
+meilisearch-sdk = "0.21.2"
+tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread"] }
 
 [profile.release]
 opt-level = "z"  # Optimize for size.
