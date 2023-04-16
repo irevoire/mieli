@@ -17,20 +17,23 @@ pub use crate::meilisearch::Meilisearch;
 pub use crate::options::{Command, Options};
 
 use clap::Parser;
+use meilisearch_sdk::Client;
 use miette::Result;
 
 type UpdateId = u32;
 type TaskId = u32;
 type DumpId = String;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let opt = Options::from_args();
     let meili = opt.meilisearch;
+    let client = Client::new(meili.addr.clone(), meili.key.clone());
+    let index = client.index(meili.index.clone());
 
     match opt.command {
         Command::Inner(command) => command.execute().await,
-        Command::Documents(command) => command.execute(meili).await,
+        Command::Documents(command) => command.execute(index).await,
         Command::Search {
             search_terms,
             interactive: false,

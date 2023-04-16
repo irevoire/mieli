@@ -28,8 +28,11 @@ serde = { version = "1.0.143", features = ["serde_derive"] }
 serde-cs = "0.2.4"
 clap_complete = "3.2.4"
 dialoguer = "0.10.2"
-meilisearch-sdk = "0.21.2"
-tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread"] }
+# meilisearch-sdk = { git = "https://github.com/meilisearch/meilisearch-rust.git", branch = "main" }
+meilisearch-sdk = { path = "../meilisearch-rust" }
+tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread", "fs", "io-std", "io-util"] }
+futures = { version = "0.3.28", features = ["io-compat"] }
+tokio-util = { version = "0.7.7", features = ["compat", "io"] }
 
 [profile.release]
 opt-level = "z"  # Optimize for size.

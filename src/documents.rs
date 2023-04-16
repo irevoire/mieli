@@ -1,14 +1,16 @@
-use crate::Meilisearch;
 use clap::Parser;
-use meilisearch_sdk::{documents::DocumentsQuery, indexes::Index, Client};
-use miette::{bail, IntoDiagnostic, Result};
-use reqwest::header::CONTENT_TYPE;
-use serde::Serialize;
-use std::{
-    fs::File,
-    io::{stdin, Read},
-    path::PathBuf,
+use futures::AsyncRead;
+use meilisearch_sdk::{
+    documents::{DocumentQuery, DocumentsQuery},
+    indexes::Index,
 };
+use miette::{bail, IntoDiagnostic, Result};
+use serde::Serialize;
+use serde_json::Value;
+use std::{path::PathBuf, pin::Pin};
+use tokio::fs::File;
+use tokio::io::stdin;
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 pub type DocId = String;
 
@@ -67,167 +69,129 @@ pub struct GetDocumentParameter {
     #[clap(long, aliases = &["limits"])]
     limit: Option<usize>,
     /// Skip the n first documents.
-    #[clap(long)]
-    from: Option<usize>,
+    #[clap(long, aliases = &["from"])]
+    offset: Option<usize>,
     /// Select fields from the documents.
     #[clap(long, aliases = &["field"])]
-    fields: Option<String>,
+    fields: Option<Vec<String>>,
 }
 
 impl Documents {
-    pub async fn execute(self, meili: Meilisearch) -> Result<()> {
+    pub async fn execute(self, index: Index) -> Result<()> {
         match self {
             Documents::Get {
                 document_id: None,
                 param,
-            } => meili.get_all_documents(param).await,
+            } => {
+                let documents = index
+                    .get_documents_with::<Value>(&DocumentsQuery {
+                        index: &index,
+                        offset: param.offset,
+                        limit: param.limit,
+                        fields: param
+                            .fields
+                            .as_ref()
+                            .map(|fields| fields.iter().map(|field| field.as_str()).collect()),
+                    })
+                    .await
+                    .unwrap();
+
+                dbg!(documents.results);
+
+                Ok(())
+            }
             Documents::Get {
                 document_id: Some(id),
-                ..
-            } => meili.get_one_document(id).await,
+                param,
+            } => {
+                let document = index
+                    .get_document_with::<Value>(
+                        &id,
+                        &DocumentQuery {
+                            index: &index,
+                            fields: param
+                                .fields
+                                .as_ref()
+                                .map(|fields| fields.iter().map(|field| field.as_str()).collect()),
+                        },
+                    )
+                    .await
+                    .unwrap();
+                dbg!(document);
+                Ok(())
+            }
             Documents::Add {
                 content_type,
                 file,
                 primary,
-            } => {
-                meili
-                    .index_documents(file, primary, content_type, false)
-                    .await
-            }
+            } => index_documents(index, file, primary, content_type, false).await,
             Documents::Update {
                 content_type,
                 file,
                 primary,
-            } => {
-                meili
-                    .index_documents(file, primary, content_type, true)
-                    .await
-            }
+            } => index_documents(index, file, primary, content_type, true).await,
             Documents::Delete { document_ids } => match document_ids.as_slice() {
-                [] => meili.delete_all().await,
-                [id] => meili.delete_one(id.clone()).await,
-                ids => meili.delete_batch(ids).await,
+                [] => {
+                    index.delete_all_documents().await.into_diagnostic()?;
+                    Ok(())
+                }
+                [id] => {
+                    index.delete_document(&id).await.into_diagnostic()?;
+                    Ok(())
+                }
+                ids => {
+                    index.delete_documents(ids).await.into_diagnostic()?;
+                    Ok(())
+                }
             },
         }
     }
 }
 
-impl Meilisearch {
-    async fn get_one_document(&self, docid: DocId) -> Result<()> {
-        let response = self
-            .get(format!(
-                "{}/indexes/{}/documents/{}",
-                self.addr, self.index, docid
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
+async fn index_documents(
+    index: Index,
+    filepath: Option<PathBuf>,
+    primary_key: Option<String>,
+    content_type: Option<String>,
+    reindex: bool,
+) -> Result<()> {
+    let content_type = if let Some(ref content_type) = content_type {
+        content_type.as_str()
+    } else {
+        match filepath
+            .as_ref()
+            .and_then(|filepath| filepath.extension())
+            .and_then(|ext| ext.to_str())
+        {
+            Some("csv") => "text/csv",
+            Some("jsonl") | Some("ndjson") | Some("jsonlines") => "text/x-ndjson",
+            _ => "application/json",
+        }
+    };
 
-    async fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
-        let client = Client::new(&self.addr, self.key.clone().unwrap_or_default());
-        let index = client.index(&self.index);
+    let reader = match filepath {
+        Some(filepath) => {
+            let file = File::open(filepath).await.into_diagnostic()?;
+            Box::pin(file.compat()) as Pin<Box<dyn AsyncRead + Sync + Send>>
+        }
+        None if atty::isnt(atty::Stream::Stdin) => {
+            Box::pin(stdin().compat()) as Pin<Box<dyn AsyncRead + Sync + Send>>
+        }
+        None => bail!("Did you forgot to pipe something in the command?"),
+    };
 
-        let response = index
-            .get_documents_with(&DocumentsQuery {
-                index: &index,
-                offset: params.from,
-                limit: params.limit,
-                fields: params.fields.map(|fields| vec![fields.as_ref()]),
-            })
+    if reindex {
+        index
+            .add_or_replace_unchecked_payload(reader, content_type, primary_key.as_deref())
             .await
             .into_diagnostic()?;
-
-        // let response = self
-        //     .get(&format!(
-        //         "{}/indexes/{}/documents?{}",
-        //         self.addr,
-        //         self.index,
-        //         yaup::to_string(&params).into_diagnostic()?
-        //     ))
-        //     .send()
-        //     .into_diagnostic()?;
-
-        self.handle_response(response)
-    }
-
-    async fn index_documents(
-        &self,
-        filepath: Option<PathBuf>,
-        primary_key: Option<String>,
-        content_type: Option<String>,
-        reindex: bool,
-    ) -> Result<()> {
-        let url = format!("{}/indexes/{}/documents", self.addr, self.index);
-        let client = match reindex {
-            false => self.post(url),
-            true => self.put(url),
-        };
-        let client = if let Some(content_type) = content_type {
-            client.header(CONTENT_TYPE, content_type)
-        } else {
-            match filepath
-                .as_ref()
-                .and_then(|filepath| filepath.extension())
-                .and_then(|ext| ext.to_str())
-            {
-                Some("csv") => client.header(CONTENT_TYPE, "text/csv"),
-                Some("jsonl") | Some("ndjson") | Some("jsonlines") => {
-                    client.header(CONTENT_TYPE, "text/x-ndjson")
-                }
-                _ => client.header(CONTENT_TYPE, "application/json"),
-            }
-        };
-        let client = if let Some(primary_key) = primary_key {
-            client.query(&[("primaryKey", primary_key)])
-        } else {
-            client
-        };
-
-        let response = match filepath {
-            Some(filepath) => {
-                let file = File::open(filepath).into_diagnostic()?;
-                client.body(file).send().into_diagnostic()?
-            }
-            None if atty::isnt(atty::Stream::Stdin) => {
-                let mut buffer = Vec::new();
-                stdin().read_to_end(&mut buffer).into_diagnostic()?;
-
-                client.body(buffer).send().into_diagnostic()?
-            }
-            None => bail!("Did you forgot to pipe something in the command?"),
-        };
-        self.handle_response(response)
-    }
-
-    async fn delete_all(&self) -> Result<()> {
-        let response = self
-            .delete(format!("{}/indexes/{}/documents", self.addr, self.index))
-            .send()
+    } else {
+        index
+            .add_or_update_unchecked_payload(reader, content_type, primary_key.as_deref())
+            .await
             .into_diagnostic()?;
-        self.handle_response(response)
     }
 
-    async fn delete_one(&self, docid: DocId) -> Result<()> {
-        let response = self
-            .delete(format!(
-                "{}/indexes/{}/documents/{}",
-                self.addr, self.index, docid
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    async fn delete_batch(&self, docids: &[DocId]) -> Result<()> {
-        let response = self
-            .post(format!(
-                "{}/indexes/{}/documents/delete-batch",
-                self.addr, self.index
-            ))
-            .json(docids)
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
+    // self.handle_response(response)
+    Ok(())
 }
