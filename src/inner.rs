@@ -1,4 +1,5 @@
 use std::{
+    env,
     fmt::Display,
     io::{stdout, BufWriter, Write},
     path::Path,
@@ -10,7 +11,7 @@ use clap_complete::{
     shells::{Bash, Elvish, Fish, Zsh},
 };
 use dialoguer::Confirm;
-use miette::{bail, IntoDiagnostic, Result};
+use miette::{bail, miette, Context, IntoDiagnostic, Result};
 
 use crate::options::Options;
 
@@ -35,17 +36,77 @@ impl Inner {
 }
 
 pub fn upgrade() -> Result<()> {
-    bail!("Not implemented yet")
+    let github = "https://github.com";
+    let latest_release = reqwest::blocking::get(format!("{github}/irevoire/mieli/releases/latest"))
+        .into_diagnostic()?;
+    let latest_release_url = format!("{github}{}", latest_release.url().path());
+
+    let mut latest_release = latest_release_url.rsplit_once('/').unwrap().1.to_string();
+    if latest_release.starts_with('v') {
+        latest_release = latest_release.chars().skip(1).collect();
+    }
+    let current_version = env!("CARGO_PKG_VERSION");
+
+    if current_version >= latest_release.as_str() {
+        println!("Current version {current_version} is equal or higher than latest published version {latest_release}");
+        return Ok(());
+    }
+
+    let executable_path = env::current_exe()
+        .into_diagnostic()
+        .with_context(|| "can't get the executable path")?;
+
+    #[allow(unused)]
+    let mut bin_name: Result<&str> = Err(miette!("Could not determine the right binary for your OS / architecture.\nYou can check the latest release here: {latest_release}."));
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    {
+        bin_name = Ok("mieli-linux-amd64");
+    }
+    #[cfg(all(target_os = "macos", target_arch = "amd64"))]
+    {
+        bin_name = Ok("mieli-macos-amd64");
+    }
+    let bin_url = format!(
+        "{github}/irevoire/mieli/releases/download/v{latest_release}/{}",
+        bin_name?
+    );
+    let mut executable_dir = executable_path.clone();
+    executable_dir.pop();
+    let mut tmp = tempfile::NamedTempFile::new_in(executable_dir).into_diagnostic()?;
+    let mut res = reqwest::blocking::get(bin_url).into_diagnostic()?;
+    res.copy_to(&mut tmp).into_diagnostic()?;
+
+    let file = tmp
+        .persist(&executable_path)
+        .into_diagnostic()
+        .with_context(|| {
+            format!(
+                "Error while trying to write the binary to {:?}",
+                executable_path
+            )
+        })?;
+
+    let mut permissions = file.metadata().into_diagnostic()?.permissions();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        #[allow(clippy::non_octal_unix_permissions)]
+        //                     rwxrwxrwx
+        permissions.set_mode(0b111101101);
+    }
+
+    file.set_permissions(permissions).into_diagnostic()?;
+    Ok(())
 }
 
 pub fn version() -> Result<()> {
-    writeln!(
-        stdout(),
+    println!(
         "{} - version {}",
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
-    )
-    .into_diagnostic()
+    );
+    Ok(())
 }
 
 #[derive(Debug, Copy, Clone)]
