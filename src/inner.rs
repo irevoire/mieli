@@ -19,7 +19,7 @@ use crate::options::Options;
 pub enum Inner {
     /// Generate the autocomplete file for your shell.
     AutoComplete { shell: Option<String> },
-    /// Download and install the new mieli version.
+    /// Download and install the latest `mieli` version.
     Upgrade,
     /// Return the current version of mieli.
     Version,
