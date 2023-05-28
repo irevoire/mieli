@@ -110,10 +110,16 @@ impl Meilisearch {
 
     fn template(&self) -> Result<()> {
         let json = json!({
-          "description": "Add documents key",
-          "actions": ["documents.add"],
-          "indexes": ["mieli"],
-          "expiresAt": "2021-11-13T00:00:00Z"
+          "name": "Super mieli key",
+          "description": "🐻",
+          "uid": "70fba3d6-812b-4cd0-b76b-58645e7798cd",
+          "actions": [
+            "*"
+          ],
+          "indexes": [
+            "*"
+          ],
+          "expiresAt": null,
         });
         println!(
             "{}",
