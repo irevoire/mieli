@@ -20,7 +20,6 @@ use clap::Parser;
 use miette::Result;
 
 type TaskId = u32;
-type DumpId = String;
 
 fn main() -> Result<()> {
     let opt = Options::from_args();
@@ -39,10 +38,7 @@ fn main() -> Result<()> {
         } => meili.interactive_search(search_terms.join(" ")),
         Command::Settings => meili.settings(),
         Command::Index(command) => command.execute(meili),
-        Command::Dump { dump_id: None } => meili.create_dump(),
-        Command::Dump {
-            dump_id: Some(dump_id),
-        } => meili.dump_status(dump_id),
+        Command::Dump => meili.create_dump(),
         Command::Health => meili.healthcheck(),
         Command::Version => meili.version(),
         Command::Stats => meili.stats(),

@@ -21,11 +21,8 @@ pub enum Command {
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
     Documents(Documents),
-    /// Create a dump or get the status of a dump
-    Dump {
-        /// The dump you want info from
-        dump_id: Option<String>,
-    },
+    /// Create a dump
+    Dump,
     /// Get information about the task of an index.
     #[clap(aliases = &["task", "t"])]
     Tasks {

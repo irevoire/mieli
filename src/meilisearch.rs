@@ -3,7 +3,7 @@ use std::io::{stdin, Read};
 use crate::{
     format::{write_json, write_response_full, write_response_headers},
     options::TasksFilter,
-    DumpId, TaskId,
+    TaskId,
 };
 use clap::Parser;
 use indicatif::ProgressBar;
@@ -185,14 +185,6 @@ impl Meilisearch {
     pub fn create_dump(&self) -> Result<()> {
         let response = self
             .post(format!("{}/dumps", self.addr))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    pub fn dump_status(&self, dump_id: DumpId) -> Result<()> {
-        let response = self
-            .get(format!("{}/dumps/{}/status", self.addr, dump_id))
             .send()
             .into_diagnostic()?;
         self.handle_response(response)
