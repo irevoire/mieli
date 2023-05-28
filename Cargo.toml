@@ -15,7 +15,7 @@ keywords = ["meilisearch", "cli", "search", "bears"]
 
 [dependencies]
 atty = "0.2"
-clap = { version = "4.3.0", features = ["color", "suggestions", "derive", "env"] }
+clap = { version = "4.3.0", features = ["derive", "env", "unicode"] }
 clap_complete = "4.3.0"
 reqwest = { version = "0.11.18", default-features = false, features = ["rustls-tls", "blocking", "json"] }
 termion = "2.0.1"
