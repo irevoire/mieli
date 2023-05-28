@@ -20,7 +20,7 @@ clap_complete = "4.3.0"
 reqwest = { version = "0.11.18", default-features = false, features = ["rustls-tls", "blocking", "json"] }
 termion = "2.0.1"
 serde_json = { version = "1.0.96", features = ["preserve_order"] }
-indicatif = "0.16.2"
+indicatif = "0.17.3"
 inquire = "0.2.1"
 colored_json = "2.1.0"
 miette = { version = "5.9.0", features = ["fancy"] }
