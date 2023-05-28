@@ -17,10 +17,14 @@ pub enum Documents {
     #[clap(aliases = &["g"])]
     Get {
         /// The id of the document you want to retrieve
-        document_id: Option<DocId>,
+        #[clap(long, conflicts_with = "filter")]
+        id: Option<String>,
+        /// The filter used to retrieve the document
+        #[clap(long)]
+        filter: Option<String>,
         /// Query parameters.
         #[clap(flatten)]
-        param: GetDocumentParameter,
+        params: GetDocumentParameter,
     },
     /// Add documents with the `post` verb
     /// You can pipe your documents in the command
@@ -64,12 +68,15 @@ pub enum Documents {
 pub struct GetDocumentParameter {
     /// Number of documents to return.
     #[clap(long, aliases = &["limits"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
     limit: Option<usize>,
     /// Skip the n first documents.
     #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     from: Option<usize>,
     /// Select fields from the documents.
     #[clap(long, aliases = &["field"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
     fields: Option<String>,
 }
 
@@ -77,13 +84,20 @@ impl Documents {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
             Documents::Get {
-                document_id: None,
-                param,
-            } => meili.get_all_documents(param),
+                params,
+                id: None,
+                filter: None,
+            } => meili.get_all_documents(params),
             Documents::Get {
-                document_id: Some(id),
+                params,
+                id: Some(id),
                 ..
-            } => meili.get_one_document(id),
+            } => meili.get_one_document(params, id),
+            Documents::Get {
+                params,
+                filter: Some(filter),
+                ..
+            } => meili.get_documents_by_filter(params, filter),
             Documents::Add {
                 content_type,
                 file,
@@ -104,11 +118,14 @@ impl Documents {
 }
 
 impl Meilisearch {
-    fn get_one_document(&self, docid: DocId) -> Result<()> {
+    fn get_one_document(&self, params: GetDocumentParameter, docid: DocId) -> Result<()> {
         let response = self
             .get(format!(
-                "{}/indexes/{}/documents/{}",
-                self.addr, self.index, docid
+                "{}/indexes/{}/documents/{}?{}",
+                self.addr,
+                self.index,
+                docid,
+                yaup::to_string(&params).into_diagnostic()?
             ))
             .send()
             .into_diagnostic()?;
@@ -123,6 +140,22 @@ impl Meilisearch {
                 self.index,
                 yaup::to_string(&params).into_diagnostic()?
             ))
+            .send()
+            .into_diagnostic()?;
+        self.handle_response(response)
+    }
+
+    fn get_documents_by_filter(&self, params: GetDocumentParameter, filter: String) -> Result<()> {
+        let mut payload = serde_json::to_value(params).into_diagnostic()?;
+        let payload = payload.as_object_mut().expect("impossiburuuu");
+        payload.insert("filter".into(), filter.into());
+
+        let response = self
+            .post(&format!(
+                "{}/indexes/{}/documents/fetch",
+                self.addr, self.index,
+            ))
+            .json(payload)
             .send()
             .into_diagnostic()?;
         self.handle_response(response)
