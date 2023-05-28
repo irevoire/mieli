@@ -20,6 +20,8 @@ pub enum Inner {
     AutoComplete { shell: Option<String> },
     /// Download and install the new mieli version.
     Upgrade,
+    /// Return the current version of mieli.
+    Version,
 }
 
 impl Inner {
@@ -27,12 +29,23 @@ impl Inner {
         match self {
             Inner::Upgrade => upgrade(),
             Inner::AutoComplete { shell } => auto_complete(shell),
+            Inner::Version => version(),
         }
     }
 }
 
 pub fn upgrade() -> Result<()> {
     bail!("Not implemented yet")
+}
+
+pub fn version() -> Result<()> {
+    writeln!(
+        stdout(),
+        "{} - version {}",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION")
+    )
+    .into_diagnostic()
 }
 
 #[derive(Debug, Copy, Clone)]
