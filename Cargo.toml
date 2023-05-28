@@ -17,17 +17,17 @@ keywords = ["meilisearch", "cli", "search", "bears"]
 atty = "0.2"
 clap = { version = "4.3.0", features = ["color", "suggestions", "derive", "env"] }
 clap_complete = "4.3.0"
-reqwest = { version = "0.11.4", default-features = false, features = ["rustls-tls", "blocking", "json"] }
+reqwest = { version = "0.11.18", default-features = false, features = ["rustls-tls", "blocking", "json"] }
 termion = "1.5.6"
-serde_json = { version = "1.0.66", features = ["preserve_order"] }
+serde_json = { version = "1.0.96", features = ["preserve_order"] }
 indicatif = "0.16.2"
 inquire = "0.2.1"
 colored_json = "2.1.0"
-miette = { version = "5.3.0", features = ["fancy"] }
+miette = { version = "5.9.0", features = ["fancy"] }
 yaup = "0.2.1"
-serde = { version = "1.0.143", features = ["serde_derive"] }
+serde = { version = "1.0.163", features = ["serde_derive"] }
 serde-cs = "0.2.4"
-dialoguer = "0.10.2"
+dialoguer = "0.10.4"
 
 [profile.release]
 opt-level = "z"  # Optimize for size.
