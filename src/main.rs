@@ -19,7 +19,6 @@ pub use crate::options::{Command, Options};
 use clap::Parser;
 use miette::Result;
 
-type UpdateId = u32;
 type TaskId = u32;
 type DumpId = String;
 
@@ -47,7 +46,6 @@ fn main() -> Result<()> {
         Command::Health => meili.healthcheck(),
         Command::Version => meili.version(),
         Command::Stats => meili.stats(),
-        Command::Status { update_id } => meili.status(update_id),
         Command::Tasks {
             task_id,
             task_filter,

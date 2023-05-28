@@ -1,9 +1,7 @@
 use clap::Parser;
 use serde::Serialize;
 
-use crate::{
-    inner::Inner, meilisearch::Meilisearch, Documents, IndexesCommand, Key, TaskId, UpdateId,
-};
+use crate::{inner::Inner, meilisearch::Meilisearch, Documents, IndexesCommand, Key, TaskId};
 
 #[derive(Debug, Parser)]
 #[clap(about = "A stupid wrapper around meilisearch")]
@@ -27,11 +25,6 @@ pub enum Command {
     Dump {
         /// The dump you want info from
         dump_id: Option<String>,
-    },
-    /// Return the status updates
-    Status {
-        /// The update id you want the status of
-        update_id: Option<UpdateId>,
     },
     /// Get information about the task of an index.
     #[clap(aliases = &["task", "t"])]
