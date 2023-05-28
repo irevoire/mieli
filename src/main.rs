@@ -22,7 +22,7 @@ use miette::Result;
 type TaskId = u32;
 
 fn main() -> Result<()> {
-    let opt = Options::from_args();
+    let opt = Options::parse();
     let meili = opt.meilisearch;
 
     match opt.command {

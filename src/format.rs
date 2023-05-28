@@ -3,7 +3,7 @@ use reqwest::blocking::Response;
 use serde_json::Value;
 use termion::color;
 
-pub fn write_response_headers(response: &Response, verbose: usize) -> Result<()> {
+pub fn write_response_headers(response: &Response, verbose: u8) -> Result<()> {
     if verbose < 1 {
         return Ok(());
     }
@@ -38,7 +38,7 @@ pub fn write_json(response: Value) -> Result<Value> {
     Ok(response)
 }
 
-pub fn write_response_full(response: Response, verbose: usize) -> Result<Value> {
+pub fn write_response_full(response: Response, verbose: u8) -> Result<Value> {
     write_response_headers(&response, verbose)?;
     write_json(response.json().into_diagnostic()?)
 }

@@ -17,12 +17,11 @@ use serde_json::{json, Map, Value};
 
 #[derive(Debug, Parser)]
 pub struct Meilisearch {
-    /// Verbose mode (-v, -vv, etc)
-    #[structopt(global = true, short, parse(from_occurrences))]
-    pub verbose: usize,
+    #[clap(short, long, action = clap::ArgAction::Count)]
+    verbose: u8,
 
     /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)
-    #[structopt(
+    #[clap(
         global = true,
         short,
         long,
@@ -32,11 +31,11 @@ pub struct Meilisearch {
     pub addr: String,
 
     /// The command will exit immediatly after executing.
-    #[structopt(global = true, long)]
+    #[clap(global = true, long)]
     pub r#async: bool,
 
     /// The name of the index
-    #[structopt(
+    #[clap(
         global = true,
         short,
         long,
@@ -46,11 +45,11 @@ pub struct Meilisearch {
     pub index: String,
 
     /// Your secret API key <https://docs.meilisearch.com/reference/api/keys.html#get-keys>
-    #[structopt(global = true, short, long, env = "MEILI_MASTER_KEY")]
+    #[clap(global = true, short, long, env = "MEILI_MASTER_KEY")]
     pub key: Option<String>,
 
     /// Use a specific http User-Agent for your request
-    #[structopt(
+    #[clap(
         global = true,
         long,
         default_value = concat!("mieli/", env!("CARGO_PKG_VERSION")),
@@ -59,11 +58,11 @@ pub struct Meilisearch {
 
     /// Use a specific http header for your request.
     /// Eg. `mieli search --custom-header "x-meilisearch-client: turbo-doggo/42.9000"`
-    #[structopt(global = true, long)]
+    #[clap(global = true, long)]
     pub custom_header: Option<String>,
 
     /// Interval between each status check (in milliseconds)
-    #[structopt(global = true, long, default_value = "200")]
+    #[clap(global = true, long, default_value = "200")]
     pub interval: usize,
 }
 
