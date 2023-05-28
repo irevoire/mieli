@@ -93,7 +93,7 @@ impl Meilisearch {
     ) -> reqwest::blocking::RequestBuilder {
         let mut req_builder = closure(Client::new());
         if let Some(ref key) = self.key {
-            req_builder = req_builder.header("X-Meili-API-Key", key).bearer_auth(key);
+            req_builder = req_builder.bearer_auth(key);
         }
         if let Some((key, value)) = self.custom_header.as_ref().and_then(|h| h.split_once(':')) {
             req_builder = req_builder.header(key, value);
