@@ -2,7 +2,7 @@ use inquire::Text;
 use miette::{IntoDiagnostic, Result};
 use serde_json::{json, Map, Value};
 use std::io::stdout;
-use termion::{color, screen::AlternateScreen};
+use termion::{color, screen::IntoAlternateScreen};
 
 use crate::Meilisearch;
 
@@ -12,7 +12,7 @@ impl Meilisearch {
         base_search: String,
         base_search_config: Map<String, Value>,
     ) -> Result<()> {
-        let _screen = AlternateScreen::from(stdout());
+        let _screen = stdout().into_alternate_screen().into_diagnostic()?;
         let available_lines = termion::terminal_size().expect("Unsupported terminal").1;
 
         Text::new("Search:")
