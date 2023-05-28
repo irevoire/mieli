@@ -3,6 +3,7 @@ use clap::Parser;
 use miette::{bail, IntoDiagnostic, Result};
 use reqwest::header::CONTENT_TYPE;
 use serde::Serialize;
+use serde_json::json;
 use std::{
     fs::File,
     io::{stdin, Read},
@@ -59,8 +60,12 @@ pub enum Documents {
     /// Delete documents. If no argument are specified all documents are deleted.
     #[clap(aliases = &["d"])]
     Delete {
-        /// The list of document ids you want to delete
-        document_ids: Vec<DocId>,
+        /// The ids of the documents you want to delete
+        #[clap(long, conflicts_with = "filter")]
+        ids: Option<Vec<DocId>>,
+        /// The filter used to delete the documents
+        #[clap(long)]
+        filter: Option<String>,
     },
 }
 
@@ -108,11 +113,19 @@ impl Documents {
                 file,
                 primary,
             } => meili.index_documents(file, primary, content_type, true),
-            Documents::Delete { document_ids } => match document_ids.as_slice() {
+            Documents::Delete {
+                ids: None,
+                filter: None,
+            } => meili.delete_all(),
+            Documents::Delete { ids: Some(ids), .. } => match ids.as_slice() {
                 [] => meili.delete_all(),
                 [id] => meili.delete_one(id.clone()),
                 ids => meili.delete_batch(ids),
             },
+            Documents::Delete {
+                filter: Some(filter),
+                ..
+            } => meili.delete_documents_by_filter(filter),
         }
     }
 }
@@ -236,6 +249,18 @@ impl Meilisearch {
                 self.addr, self.index
             ))
             .json(docids)
+            .send()
+            .into_diagnostic()?;
+        self.handle_response(response)
+    }
+
+    fn delete_documents_by_filter(&self, filter: String) -> Result<()> {
+        let response = self
+            .post(format!(
+                "{}/indexes/{}/documents/delete",
+                self.addr, self.index
+            ))
+            .json(&json!({ "filter": filter }))
             .send()
             .into_diagnostic()?;
         self.handle_response(response)
