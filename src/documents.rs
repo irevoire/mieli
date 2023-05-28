@@ -33,7 +33,7 @@ pub enum Documents {
     /// it'll be set as json.
     #[clap(aliases = &["a"])]
     Add {
-        /// Set the content-type of your file.
+        /// Set the content-type of your file. It should be either `application/json`, `application/x-ndjson`, `text/csv`.
         #[clap(short)]
         content_type: Option<String>,
         /// The primary key
@@ -48,7 +48,7 @@ pub enum Documents {
     /// it'll be set as json.
     #[clap(aliases = &["u"])]
     Update {
-        /// Set the content-type of your file
+        /// Set the content-type of your file. It should be either `application/json`, `application/x-ndjson`, `text/csv`.
         #[clap(short)]
         content_type: Option<String>,
         /// The primary key
@@ -196,7 +196,7 @@ impl Meilisearch {
             {
                 Some("csv") => client.header(CONTENT_TYPE, "text/csv"),
                 Some("jsonl") | Some("ndjson") | Some("jsonlines") => {
-                    client.header(CONTENT_TYPE, "text/x-ndjson")
+                    client.header(CONTENT_TYPE, "application/x-ndjson")
                 }
                 _ => client.header(CONTENT_TYPE, "application/json"),
             }
