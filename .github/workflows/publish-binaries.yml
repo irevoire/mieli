@@ -1,31 +1,31 @@
 on:
-  release:
-    types: [published]
+  - push
+  - release:
+      types: [published]
 
 name: Publish binaries to release
 
 jobs:
   publish:
     name: Publish for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            artifact_name: mieli
-            asset_name: mieli-linux-amd64
-          - os: macos-latest
-            artifact_name: mieli
-            asset_name: mieli-macos-amd64
-
+        target: [
+          aarch64-unknown-linux-gnu, i686-unknown-linux-gnu, x86_64-unknown-linux-gnu, # Linux
+          aarch64-apple-darwin, x86_64-apple-darwin, # macOS
+          aarch64-pc-windows-msvc, x86_64-pc-windows-gnu, x86_64-pc-windows-msvc, # Windows
+          x86_64-unknown-freebsd, x86_64-unknown-netbsd # BSD
+        ]
     steps:
-      - uses: hecrj/setup-rust-action@master
+      - name: Checkout
+      - uses: actions/checkout@v3
+      - name: Build target
+        uses: actions-rs/cargo@v1
         with:
-          rust-version: stable
-      - uses: actions/checkout@v2
-      - name: Build
-        run: cargo build --release --locked
+          use-cross: true
+          command: build
+          args: --release --locked --target ${{ matrix.target }}
       - name: Compress binaries
         uses: svenstaro/upx-action@v2
         with:
@@ -36,30 +36,6 @@ jobs:
           repo_token: ${{ secrets.PUBLISH_TOKEN }}
           file: target/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
-          tag: ${{ github.ref }}
-
-  publish-armv8:
-    name: Publish for ARMv8
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: uraimo/run-on-arch-action@v1.0.7
-        id: runcmd
-        with:
-          architecture: aarch64 # aka ARMv8
-          distribution: ubuntu18.04
-          run: |
-            apt update
-            apt install -y curl gcc make
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
-            source $HOME/.cargo/env
-            cargo build --release --locked
-      - name: Upload the binary to release
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.PUBLISH_TOKEN }}
-          file: target/release/mieli
-          asset_name: mieli-linux-armv8
           tag: ${{ github.ref }}
 
   publish-crates-io:
