@@ -1,16 +1,19 @@
 use std::{
     env,
     fmt::Display,
+    fs,
     io::{stdout, BufWriter, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
+use byte_unit::Byte;
 use clap::{CommandFactory, Parser};
 use clap_complete::{
     generate,
     shells::{Bash, Elvish, Fish, Zsh},
 };
 use dialoguer::Confirm;
+use heed::{types::ByteSlice, EnvOpenOptions, PolyDatabase, RoTxn};
 use miette::{bail, miette, Context, IntoDiagnostic, Result};
 
 use crate::options::Options;
@@ -23,6 +26,8 @@ pub enum Inner {
     Upgrade,
     /// Return the current version of mieli.
     Version,
+    /// Print the index stats (sizes, number of entries, etc.)
+    Stats { path: PathBuf },
 }
 
 impl Inner {
@@ -31,6 +36,7 @@ impl Inner {
             Inner::Upgrade => upgrade(),
             Inner::AutoComplete { shell } => auto_complete(shell),
             Inner::Version => version(),
+            Inner::Stats { path } => stats(path),
         }
     }
 }
@@ -207,5 +213,201 @@ pub fn auto_complete(shell: Option<String>) -> Result<()> {
         bail!("Can't detect your shell. Env variable $SHELL is not set.");
     }
 
+    Ok(())
+}
+
+/// List of the indexes
+pub const MAIN: &str = "main";
+pub const WORD_DOCIDS: &str = "word-docids";
+pub const EXACT_WORD_DOCIDS: &str = "exact-word-docids";
+pub const WORD_PREFIX_DOCIDS: &str = "word-prefix-docids";
+pub const EXACT_WORD_PREFIX_DOCIDS: &str = "exact-word-prefix-docids";
+pub const WORD_PAIR_PROXIMITY_DOCIDS: &str = "word-pair-proximity-docids";
+pub const WORD_PREFIX_PAIR_PROXIMITY_DOCIDS: &str = "word-prefix-pair-proximity-docids";
+pub const PREFIX_WORD_PAIR_PROXIMITY_DOCIDS: &str = "prefix-word-pair-proximity-docids";
+pub const WORD_POSITION_DOCIDS: &str = "word-position-docids";
+pub const WORD_FIELD_ID_DOCIDS: &str = "word-field-id-docids";
+pub const WORD_PREFIX_POSITION_DOCIDS: &str = "word-prefix-position-docids";
+pub const WORD_PREFIX_FIELD_ID_DOCIDS: &str = "word-prefix-field-id-docids";
+pub const FIELD_ID_WORD_COUNT_DOCIDS: &str = "field-id-word-count-docids";
+pub const FACET_ID_F64_DOCIDS: &str = "facet-id-f64-docids";
+pub const FACET_ID_EXISTS_DOCIDS: &str = "facet-id-exists-docids";
+pub const FACET_ID_IS_NULL_DOCIDS: &str = "facet-id-is-null-docids";
+pub const FACET_ID_IS_EMPTY_DOCIDS: &str = "facet-id-is-empty-docids";
+pub const FACET_ID_STRING_DOCIDS: &str = "facet-id-string-docids";
+pub const FIELD_ID_DOCID_FACET_F64S: &str = "field-id-docid-facet-f64s";
+pub const FIELD_ID_DOCID_FACET_STRINGS: &str = "field-id-docid-facet-strings";
+pub const VECTOR_ID_DOCID: &str = "vector-id-docids";
+pub const DOCUMENTS: &str = "documents";
+pub const SCRIPT_LANGUAGE_DOCIDS: &str = "script_language_docids";
+
+#[derive(Debug)]
+pub struct Stats {
+    pub number_of_entries: u64,
+    pub size_of_keys: u64,
+    pub size_of_data: u64,
+    pub size_of_entries: u64,
+}
+
+fn compute_stats(rtxn: &RoTxn, db: PolyDatabase) -> Result<Stats> {
+    let mut number_of_entries = 0;
+    let mut size_of_keys = 0;
+    let mut size_of_data = 0;
+
+    for result in db.iter::<ByteSlice, ByteSlice>(rtxn).unwrap() {
+        let (key, data) = result.unwrap();
+        number_of_entries += 1;
+        size_of_keys += key.len() as u64;
+        size_of_data += data.len() as u64;
+    }
+
+    Ok(Stats {
+        number_of_entries,
+        size_of_keys,
+        size_of_data,
+        size_of_entries: size_of_keys + size_of_data,
+    })
+}
+
+fn get_folder_size(path: &Path) -> Result<u64, std::io::Error> {
+    let mut total_size = 0;
+
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let file_type = entry.file_type()?;
+        let entry_path = entry.path();
+
+        if file_type.is_file() {
+            total_size += fs::metadata(entry_path)?.len();
+        } else if file_type.is_dir() {
+            total_size += get_folder_size(&entry_path)?;
+        }
+    }
+
+    Ok(total_size)
+}
+
+pub fn stats(path: PathBuf) -> Result<()> {
+    let folder_size = get_folder_size(&path).unwrap();
+    let byte = Byte::from_bytes(folder_size);
+    let adjusted_byte = byte.get_appropriate_unit(false);
+    println!("total - {}", adjusted_byte.to_string());
+
+    let env = EnvOpenOptions::new().max_dbs(24).open(path).unwrap();
+
+    let mut wtxn = env.write_txn().unwrap();
+    let main = env.create_poly_database(&mut wtxn, Some(MAIN)).unwrap();
+    let word_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_DOCIDS))
+        .unwrap();
+    let exact_word_docids = env
+        .create_poly_database(&mut wtxn, Some(EXACT_WORD_DOCIDS))
+        .unwrap();
+    let word_prefix_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_PREFIX_DOCIDS))
+        .unwrap();
+    let exact_word_prefix_docids = env
+        .create_poly_database(&mut wtxn, Some(EXACT_WORD_PREFIX_DOCIDS))
+        .unwrap();
+    let word_pair_proximity_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_PAIR_PROXIMITY_DOCIDS))
+        .unwrap();
+    let script_language_docids = env
+        .create_poly_database(&mut wtxn, Some(SCRIPT_LANGUAGE_DOCIDS))
+        .unwrap();
+    let word_prefix_pair_proximity_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_PREFIX_PAIR_PROXIMITY_DOCIDS))
+        .unwrap();
+    let prefix_word_pair_proximity_docids = env
+        .create_poly_database(&mut wtxn, Some(PREFIX_WORD_PAIR_PROXIMITY_DOCIDS))
+        .unwrap();
+    let word_position_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_POSITION_DOCIDS))
+        .unwrap();
+    let word_fid_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_FIELD_ID_DOCIDS))
+        .unwrap();
+    let field_id_word_count_docids = env
+        .create_poly_database(&mut wtxn, Some(FIELD_ID_WORD_COUNT_DOCIDS))
+        .unwrap();
+    let word_prefix_position_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_PREFIX_POSITION_DOCIDS))
+        .unwrap();
+    let word_prefix_fid_docids = env
+        .create_poly_database(&mut wtxn, Some(WORD_PREFIX_FIELD_ID_DOCIDS))
+        .unwrap();
+    let facet_id_f64_docids = env
+        .create_poly_database(&mut wtxn, Some(FACET_ID_F64_DOCIDS))
+        .unwrap();
+    let facet_id_string_docids = env
+        .create_poly_database(&mut wtxn, Some(FACET_ID_STRING_DOCIDS))
+        .unwrap();
+    let facet_id_exists_docids = env
+        .create_poly_database(&mut wtxn, Some(FACET_ID_EXISTS_DOCIDS))
+        .unwrap();
+    let facet_id_is_null_docids = env
+        .create_poly_database(&mut wtxn, Some(FACET_ID_IS_NULL_DOCIDS))
+        .unwrap();
+    let facet_id_is_empty_docids = env
+        .create_poly_database(&mut wtxn, Some(FACET_ID_IS_EMPTY_DOCIDS))
+        .unwrap();
+    let field_id_docid_facet_f64s = env
+        .create_poly_database(&mut wtxn, Some(FIELD_ID_DOCID_FACET_F64S))
+        .unwrap();
+    let field_id_docid_facet_strings = env
+        .create_poly_database(&mut wtxn, Some(FIELD_ID_DOCID_FACET_STRINGS))
+        .unwrap();
+    let vector_id_docid = env
+        .create_poly_database(&mut wtxn, Some(VECTOR_ID_DOCID))
+        .unwrap();
+    let documents = env
+        .create_poly_database(&mut wtxn, Some(DOCUMENTS))
+        .unwrap();
+    wtxn.commit().unwrap();
+
+    let list = [
+        (main, MAIN),
+        (word_docids, WORD_DOCIDS),
+        (exact_word_docids, EXACT_WORD_DOCIDS),
+        (word_prefix_docids, WORD_PREFIX_DOCIDS),
+        (exact_word_prefix_docids, EXACT_WORD_PREFIX_DOCIDS),
+        (word_pair_proximity_docids, WORD_PAIR_PROXIMITY_DOCIDS),
+        (script_language_docids, SCRIPT_LANGUAGE_DOCIDS),
+        (
+            word_prefix_pair_proximity_docids,
+            WORD_PREFIX_PAIR_PROXIMITY_DOCIDS,
+        ),
+        (
+            prefix_word_pair_proximity_docids,
+            PREFIX_WORD_PAIR_PROXIMITY_DOCIDS,
+        ),
+        (word_position_docids, WORD_POSITION_DOCIDS),
+        (word_fid_docids, WORD_FIELD_ID_DOCIDS),
+        (field_id_word_count_docids, FIELD_ID_WORD_COUNT_DOCIDS),
+        (word_prefix_position_docids, WORD_PREFIX_POSITION_DOCIDS),
+        (word_prefix_fid_docids, WORD_PREFIX_FIELD_ID_DOCIDS),
+        (facet_id_f64_docids, FACET_ID_F64_DOCIDS),
+        (facet_id_string_docids, FACET_ID_STRING_DOCIDS),
+        (facet_id_exists_docids, FACET_ID_EXISTS_DOCIDS),
+        (facet_id_is_null_docids, FACET_ID_IS_NULL_DOCIDS),
+        (facet_id_is_empty_docids, FACET_ID_IS_EMPTY_DOCIDS),
+        (field_id_docid_facet_f64s, FIELD_ID_DOCID_FACET_F64S),
+        (field_id_docid_facet_strings, FIELD_ID_DOCID_FACET_STRINGS),
+        (vector_id_docid, VECTOR_ID_DOCID),
+        (documents, DOCUMENTS),
+    ];
+
+    let rtxn = env.read_txn().unwrap();
+    for (db, name) in list {
+        let stats = compute_stats(&rtxn, db).unwrap();
+        let byte = Byte::from_bytes(stats.size_of_entries);
+        let adjusted_byte = byte.get_appropriate_unit(false);
+
+        println!(
+            "{name} - {} entries = {}",
+            stats.number_of_entries,
+            adjusted_byte.to_string()
+        );
+    }
     Ok(())
 }
