@@ -29,6 +29,8 @@ serde = { version = "1.0.163", features = ["serde_derive"] }
 serde-cs = "0.2.4"
 dialoguer = "0.10.4"
 tempfile = "3.5.0"
+byte-unit = { version = "4.0.14", default-features = false, features = ["std", "serde"] }
+heed = "0.20.0-alpha.1"
 
 [profile.release]
 opt-level = "z"  # Optimize for size.
