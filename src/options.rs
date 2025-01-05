@@ -18,6 +18,9 @@ pub enum Command {
     /// Modify the `mieli` installation.
     #[clap(subcommand, name = "self")]
     Inner(Inner),
+    /// Manipulate indexes, add `--help` to see all the subcommands.
+    #[clap(subcommand, aliases = &["indexes", "i"])]
+    Index(IndexesCommand),
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
     Documents(Documents),
@@ -55,9 +58,6 @@ pub enum Command {
     /// You can pipe your settings in the command.
     #[clap(aliases = &["set", "setting"])]
     Settings,
-    /// Manipulate indexes, add `--help` to see all the subcommands.
-    #[clap(subcommand, aliases = &["indexes", "i"])]
-    Index(IndexesCommand),
     /// Get the keys
     #[clap(subcommand, aliases = &["keys", "k"])]
     Key(Key),
@@ -78,6 +78,10 @@ pub struct TasksFilter {
     #[clap(long, aliases = &["ty", "type"])]
     types: Option<String>,
     /// Filter tasks by their index uid.
+    #[clap(long)]
+    #[serde(rename = "indexUids")]
+    indexes: Option<String>,
+    /// Filter tasks by their uids.
     #[clap(long, aliases = &["uid"])]
     uids: Option<String>,
 }

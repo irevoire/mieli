@@ -1,42 +1,53 @@
 use clap::Parser;
 use miette::{IntoDiagnostic, Result};
+use serde::Serialize;
 use serde_json::json;
 
 use crate::Meilisearch;
+
+#[derive(Debug, Parser, Serialize)]
+pub struct ListIndexes {
+    /// Number of indexes to skip
+    #[clap(long)]
+    offset: Option<u32>,
+    /// Number of indexes to return
+    #[clap(long)]
+    limit: Option<u32>,
+}
 
 #[derive(Debug, Parser)]
 pub enum IndexesCommand {
     /// List all indexes.
     #[clap(aliases = &["all"])]
-    List,
+    List(ListIndexes),
     /// Get an index, by default use the index provided by `-i`.
     Get {
         /// The index you want to retrieve.
-        #[clap(name = "idx")]
+        #[clap(aliases = &["idx", "uid", "index_uid", "indexUid"])]
         index: Option<String>,
     },
     /// Create an index, by default use the index provided by `-i`.
     Create {
         /// The index you want to create.
-        #[clap(name = "idx")]
+        #[clap(aliases = &["idx", "uid", "index_uid", "indexUid"])]
         index: Option<String>,
         /// Primary key
-        #[clap(short, long)]
+        #[clap(short, long, aliases = &["primary-key", "primary_key", "primaryKey", "pk"])]
         primary: Option<String>,
     },
     /// Update an index, by default use the index provided by `-i`.
     Update {
         /// The index you want to update.
-        #[clap(name = "idx")]
+        #[clap(aliases = &["idx", "uid", "index_uid", "indexUid"])]
         index: Option<String>,
         /// Primary key
-        #[clap(short, long)]
+        #[clap(short, long, aliases = &["primary-key", "primary_key", "primaryKey", "pk"])]
         primary: Option<String>,
     },
     /// Delete an index, by default use the index provided by `-i`.
     Delete {
         /// The index you want to delete.
-        #[clap(name = "idx")]
+        #[clap(aliases = &["idx", "uid", "index_uid", "indexUid"])]
         index: Option<String>,
     },
 }
@@ -44,7 +55,7 @@ pub enum IndexesCommand {
 impl IndexesCommand {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            IndexesCommand::List => meili.get_all_indexes(),
+            IndexesCommand::List(opt) => meili.get_all_indexes(opt),
             IndexesCommand::Get { index } => meili.get_index(index),
             IndexesCommand::Create { index, primary } => meili.create_index(index, primary),
             IndexesCommand::Update { index, primary } => meili.update_index(index, primary),
@@ -54,11 +65,9 @@ impl IndexesCommand {
 }
 
 impl Meilisearch {
-    fn get_all_indexes(&self) -> Result<()> {
-        let response = self
-            .get(format!("{}/indexes", self.addr))
-            .send()
-            .into_diagnostic()?;
+    fn get_all_indexes(&self, opt: ListIndexes) -> Result<()> {
+        let url = format!("{}/indexes{}", self.addr, yaup::to_string(&opt).unwrap());
+        let response = self.get(url).send().into_diagnostic()?;
         self.handle_response(response)
     }
 
