@@ -18,45 +18,33 @@ pub enum DocumentsCommand {
     #[clap(aliases = &["g"])]
     Get {
         /// The id of the document you want to retrieve
-        #[clap(long, conflicts_with = "filter")]
-        id: Option<String>,
-        /// The filter used to retrieve the document
         #[clap(long)]
-        filter: Option<String>,
-        /// Query parameters.
+        id: Option<String>,
+        /// Use the `POST /documents/fetch` route with the payload as json instead of the `GET /documents` with query parameters
+        #[clap(long, default_value = "false", aliases = &["byPost", "post", "fetch"])]
+        by_post: bool,
+        // These parameters are available both for get and post
         #[clap(flatten)]
-        params: GetDocumentParameter,
+        base_params: GetDocumentBaseParameter,
+        #[clap(flatten)]
+        extra_params: GetDocumentExtraParameter,
     },
     /// Add documents with the `post` verb
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
     #[clap(aliases = &["a"])]
-    Add {
-        /// Set the content-type of your file. It should be either `application/json`, `application/x-ndjson`, `text/csv`.
-        #[clap(short)]
-        content_type: Option<String>,
-        /// The primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-        /// The file you want to send
-        file: Option<PathBuf>,
-    },
+    Add(AddOrUpdate),
     /// Replace documents with the `put` verb
     /// You can pipe your documents in the command
     /// Will try to infer the content-type from the file extension if it fail
     /// it'll be set as json.
     #[clap(aliases = &["u"])]
-    Update {
-        /// Set the content-type of your file. It should be either `application/json`, `application/x-ndjson`, `text/csv`.
-        #[clap(short)]
-        content_type: Option<String>,
-        /// The primary key
-        #[clap(short, long)]
-        primary: Option<String>,
-        /// The file you want to send
-        file: Option<PathBuf>,
-    },
+    Update(AddOrUpdate),
+    /// Update documents with function
+    /// The payload must be sent through stdin
+    #[clap(aliases = &["e"])]
+    Edit,
     /// Delete documents. If no argument are specified all documents are deleted.
     #[clap(aliases = &["d"])]
     Delete {
@@ -69,50 +57,73 @@ pub enum DocumentsCommand {
     },
 }
 
-#[derive(Debug, Parser, Serialize)]
-pub struct GetDocumentParameter {
-    /// Number of documents to return.
-    #[clap(long, aliases = &["limits"])]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    limit: Option<usize>,
-    /// Skip the n first documents.
+#[derive(Debug, Parser)]
+pub struct AddOrUpdate {
+    /// Set the content-type of your file. It should be either `application/json`, `application/x-ndjson`, `text/csv`.
+    #[clap(short)]
+    content_type: Option<String>,
+    /// The primary key
+    #[clap(short, long, aliases = &["primary-key", "primary_key", "primaryKey", "pk"])]
+    primary: Option<String>,
+    /// Configure the character separating CSV fields. Must be a string containing one ASCII character.
     #[clap(long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    from: Option<usize>,
-    /// Select fields from the documents.
+    csv_delimiter: Option<String>,
+    /// The file you want to send
+    file: Option<PathBuf>,
+}
+
+#[derive(Default, PartialEq, Eq, Debug, Parser, Serialize)]
+pub struct GetDocumentBaseParameter {
     #[clap(long, aliases = &["field"])]
     #[serde(skip_serializing_if = "Option::is_none")]
     fields: Option<String>,
+    /// Return document vector data with search result
+    #[clap(long, aliases = &["vector", "vectors", "retrieve_vector", "retrieveVectors", "retrieveVector"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    retrieve_vectors: Option<String>,
+}
+
+#[derive(Default, PartialEq, Eq, Debug, Parser, Serialize)]
+pub struct GetDocumentExtraParameter {
+    /// Number of documents to skip
+    #[clap(long, aliases = &["from"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    offset: Option<usize>,
+    /// Number of documents to return
+    #[clap(long, aliases = &["limits"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit: Option<usize>,
+    /// Refine results based on attributes in the `filterableAttributes` list
+    #[clap(long, aliases = &["filters"])]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    filter: Option<String>,
 }
 
 impl DocumentsCommand {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
             DocumentsCommand::Get {
-                params,
+                extra_params,
+                base_params,
                 id: None,
-                filter: None,
-            } => meili.get_all_documents(params),
+                by_post,
+            } => meili.get_all_documents(base_params, extra_params, by_post),
             DocumentsCommand::Get {
-                params,
+                base_params,
+                extra_params,
+                by_post,
                 id: Some(id),
-                ..
-            } => meili.get_one_document(params, id),
-            DocumentsCommand::Get {
-                params,
-                filter: Some(filter),
-                ..
-            } => meili.get_documents_by_filter(params, filter),
-            DocumentsCommand::Add {
-                content_type,
-                file,
-                primary,
-            } => meili.index_documents(file, primary, content_type, false),
-            DocumentsCommand::Update {
-                content_type,
-                file,
-                primary,
-            } => meili.index_documents(file, primary, content_type, true),
+            } => {
+                if GetDocumentExtraParameter::default() != extra_params {
+                    log::warn!("extra parameters have been specified while retrieving a document by id. The following parameters will be ignored: {}", serde_json::to_string(&extra_params).unwrap());
+                } else if by_post {
+                    log::warn!("--by-post have been specified while retrieving a document by id. That's not possible and will be ignored");
+                }
+                meili.get_one_document(base_params, id)
+            }
+            DocumentsCommand::Add(params) => meili.index_documents(params, false),
+            DocumentsCommand::Update(params) => meili.index_documents(params, true),
+            DocumentsCommand::Edit => meili.edit_documents(),
             DocumentsCommand::Delete {
                 ids: None,
                 filter: None,
@@ -131,10 +142,10 @@ impl DocumentsCommand {
 }
 
 impl Meilisearch {
-    fn get_one_document(&self, params: GetDocumentParameter, docid: DocId) -> Result<()> {
+    fn get_one_document(&self, params: GetDocumentBaseParameter, docid: DocId) -> Result<()> {
         let response = self
             .get(format!(
-                "{}/indexes/{}/documents/{}?{}",
+                "{}/indexes/{}/documents/{}{}",
                 self.addr,
                 self.index,
                 docid,
@@ -145,51 +156,55 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    fn get_all_documents(&self, params: GetDocumentParameter) -> Result<()> {
-        let response = self
-            .get(&format!(
-                "{}/indexes/{}/documents?{}",
+    fn get_all_documents(
+        &self,
+        base_params: GetDocumentBaseParameter,
+        extra_params: GetDocumentExtraParameter,
+        by_post: bool,
+    ) -> Result<()> {
+        #[derive(Serialize)]
+        struct Params {
+            #[serde(flatten)]
+            base_params: GetDocumentBaseParameter,
+            #[serde(flatten)]
+            extra_params: GetDocumentExtraParameter,
+        }
+        let params = Params {
+            base_params,
+            extra_params,
+        };
+        let response = if by_post {
+            self.post(format!(
+                "{}/indexes/{}/documents/fetch",
+                self.addr, self.index,
+            ))
+            .json(&params)
+            .send()
+            .into_diagnostic()?
+        } else {
+            self.get(format!(
+                "{}/indexes/{}/documents{}",
                 self.addr,
                 self.index,
                 yaup::to_string(&params).into_diagnostic()?
             ))
             .send()
-            .into_diagnostic()?;
+            .into_diagnostic()?
+        };
         self.handle_response(response)
     }
 
-    fn get_documents_by_filter(&self, params: GetDocumentParameter, filter: String) -> Result<()> {
-        let mut payload = serde_json::to_value(params).into_diagnostic()?;
-        let payload = payload.as_object_mut().expect("impossiburuuu");
-        payload.insert("filter".into(), filter.into());
-
-        let response = self
-            .post(&format!(
-                "{}/indexes/{}/documents/fetch",
-                self.addr, self.index,
-            ))
-            .json(payload)
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
-    fn index_documents(
-        &self,
-        filepath: Option<PathBuf>,
-        primary_key: Option<String>,
-        content_type: Option<String>,
-        reindex: bool,
-    ) -> Result<()> {
+    fn index_documents(&self, params: AddOrUpdate, reindex: bool) -> Result<()> {
         let url = format!("{}/indexes/{}/documents", self.addr, self.index);
         let client = match reindex {
             false => self.post(url),
             true => self.put(url),
         };
-        let client = if let Some(content_type) = content_type {
+        let client = if let Some(content_type) = params.content_type {
             client.header(CONTENT_TYPE, content_type)
         } else {
-            match filepath
+            match params
+                .file
                 .as_ref()
                 .and_then(|filepath| filepath.extension())
                 .and_then(|ext| ext.to_str())
@@ -201,13 +216,13 @@ impl Meilisearch {
                 _ => client.header(CONTENT_TYPE, "application/json"),
             }
         };
-        let client = if let Some(primary_key) = primary_key {
+        let client = if let Some(primary_key) = params.primary {
             client.query(&[("primaryKey", primary_key)])
         } else {
             client
         };
 
-        let response = match filepath {
+        let response = match params.file {
             Some(filepath) => {
                 let file = File::open(filepath).into_diagnostic()?;
                 client.body(file).send().into_diagnostic()?
@@ -251,6 +266,23 @@ impl Meilisearch {
             .json(docids)
             .send()
             .into_diagnostic()?;
+        self.handle_response(response)
+    }
+
+    pub fn edit_documents(&self) -> std::result::Result<(), miette::Error> {
+        let value: serde_json::Value = if atty::isnt(atty::Stream::Stdin) {
+            serde_json::from_reader(stdin()).into_diagnostic()?
+        } else {
+            bail!("The payload must be sent through stdin with the edit document by filter route. See the documentation at https://www.meilisearch.com/docs/reference/api/documents#update-documents-with-function");
+        };
+
+        let response = self
+            .post(format!("{}/indexes/{}/edit", self.addr, self.index))
+            .header(CONTENT_TYPE, "application/json")
+            .json(&value)
+            .send()
+            .into_diagnostic()?;
+
         self.handle_response(response)
     }
 
