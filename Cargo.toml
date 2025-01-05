@@ -24,11 +24,13 @@ indicatif = "0.17.3"
 inquire = "0.2.1"
 colored_json = "2.1.0"
 miette = { version = "5.9.0", features = ["fancy"] }
-yaup = "0.2.1"
+yaup = "0.3.1"
 serde = { version = "1.0.163", features = ["serde_derive"] }
 serde-cs = "0.2.4"
 dialoguer = "0.10.4"
 tempfile = "3.5.0"
+log = "0.4.22"
+env_logger = "0.11.6"
 
 [profile.release]
 opt-level = "z"  # Optimize for size.

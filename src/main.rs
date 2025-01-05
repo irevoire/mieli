@@ -9,7 +9,7 @@ mod keys;
 mod meilisearch;
 mod options;
 
-pub use crate::documents::Documents;
+pub use crate::documents::DocumentsCommand;
 pub use crate::indexes::IndexesCommand;
 pub use crate::inner::Inner;
 pub use crate::keys::Key;
@@ -17,6 +17,7 @@ pub use crate::meilisearch::Meilisearch;
 pub use crate::options::{Command, Options};
 
 use clap::Parser;
+use env_logger::Env;
 use miette::Result;
 
 type TaskId = u32;
@@ -24,6 +25,7 @@ type TaskId = u32;
 fn main() -> Result<()> {
     let opt = Options::parse();
     let meili = opt.meilisearch;
+    env_logger::Builder::from_env(Env::default().default_filter_or("mieli=debug")).init();
 
     match opt.command {
         Command::Inner(command) => command.execute(),

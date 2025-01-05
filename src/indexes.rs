@@ -9,9 +9,11 @@ use crate::Meilisearch;
 pub struct ListIndexes {
     /// Number of indexes to skip
     #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     offset: Option<u32>,
     /// Number of indexes to return
     #[clap(long)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     limit: Option<u32>,
 }
 

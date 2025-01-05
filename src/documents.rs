@@ -13,7 +13,7 @@ use std::{
 pub type DocId = String;
 
 #[derive(Debug, Parser)]
-pub enum Documents {
+pub enum DocumentsCommand {
     /// Get one document. If no argument are specified it returns all documents.
     #[clap(aliases = &["g"])]
     Get {
@@ -85,44 +85,44 @@ pub struct GetDocumentParameter {
     fields: Option<String>,
 }
 
-impl Documents {
+impl DocumentsCommand {
     pub fn execute(self, meili: Meilisearch) -> Result<()> {
         match self {
-            Documents::Get {
+            DocumentsCommand::Get {
                 params,
                 id: None,
                 filter: None,
             } => meili.get_all_documents(params),
-            Documents::Get {
+            DocumentsCommand::Get {
                 params,
                 id: Some(id),
                 ..
             } => meili.get_one_document(params, id),
-            Documents::Get {
+            DocumentsCommand::Get {
                 params,
                 filter: Some(filter),
                 ..
             } => meili.get_documents_by_filter(params, filter),
-            Documents::Add {
+            DocumentsCommand::Add {
                 content_type,
                 file,
                 primary,
             } => meili.index_documents(file, primary, content_type, false),
-            Documents::Update {
+            DocumentsCommand::Update {
                 content_type,
                 file,
                 primary,
             } => meili.index_documents(file, primary, content_type, true),
-            Documents::Delete {
+            DocumentsCommand::Delete {
                 ids: None,
                 filter: None,
             } => meili.delete_all(),
-            Documents::Delete { ids: Some(ids), .. } => match ids.as_slice() {
+            DocumentsCommand::Delete { ids: Some(ids), .. } => match ids.as_slice() {
                 [] => meili.delete_all(),
                 [id] => meili.delete_one(id.clone()),
                 ids => meili.delete_batch(ids),
             },
-            Documents::Delete {
+            DocumentsCommand::Delete {
                 filter: Some(filter),
                 ..
             } => meili.delete_documents_by_filter(filter),

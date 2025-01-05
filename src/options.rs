@@ -1,7 +1,9 @@
 use clap::Parser;
 use serde::Serialize;
 
-use crate::{inner::Inner, meilisearch::Meilisearch, Documents, IndexesCommand, Key, TaskId};
+use crate::{
+    inner::Inner, meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, Key, TaskId,
+};
 
 #[derive(Debug, Parser)]
 #[clap(about = "A stupid wrapper around meilisearch")]
@@ -23,7 +25,7 @@ pub enum Command {
     Index(IndexesCommand),
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
-    Documents(Documents),
+    Documents(DocumentsCommand),
     /// Create a dump
     Dump,
     /// Get information about the task of an index.

@@ -68,22 +68,27 @@ pub struct Meilisearch {
 
 impl Meilisearch {
     pub fn get(&self, url: impl AsRef<str>) -> RequestBuilder {
+        log::debug!("GET {}", url.as_ref());
         self.request(|c| c.get(url.as_ref()))
     }
 
     pub fn post(&self, url: impl AsRef<str>) -> RequestBuilder {
+        log::debug!("POST {}", url.as_ref());
         self.request(|c| c.post(url.as_ref()))
     }
 
     pub fn put(&self, url: impl AsRef<str>) -> RequestBuilder {
+        log::debug!("PUT {}", url.as_ref());
         self.request(|c| c.put(url.as_ref()))
     }
 
     pub fn patch(&self, url: impl AsRef<str>) -> RequestBuilder {
+        log::debug!("PATCH {}", url.as_ref());
         self.request(|c| c.patch(url.as_ref()))
     }
 
     pub fn delete(&self, url: impl AsRef<str>) -> RequestBuilder {
+        log::debug!("DELETE {}", url.as_ref());
         self.request(|c| c.delete(url.as_ref()))
     }
 
