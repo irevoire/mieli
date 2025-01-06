@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+mod batches;
 mod documents;
 mod format;
 mod indexes;
@@ -8,6 +9,7 @@ mod interactive_search;
 mod keys;
 mod meilisearch;
 mod options;
+mod tasks;
 
 pub use crate::documents::DocumentsCommand;
 pub use crate::indexes::IndexesCommand;
@@ -19,8 +21,6 @@ pub use crate::options::{Command, Options};
 use clap::Parser;
 use env_logger::Env;
 use miette::Result;
-
-type TaskId = u32;
 
 fn main() -> Result<()> {
     let opt = Options::parse();
@@ -44,10 +44,8 @@ fn main() -> Result<()> {
         Command::Health => meili.healthcheck(),
         Command::Version => meili.version(),
         Command::Stats => meili.stats(),
-        Command::Tasks {
-            task_id,
-            task_filter,
-        } => meili.tasks(task_id, task_filter),
+        Command::Tasks(command) => command.execute(meili),
+        Command::Batches(command) => command.execute(meili),
         Command::Key(command) => command.execute(meili),
     }
 }

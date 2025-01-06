@@ -1,10 +1,6 @@
 use std::io::{stdin, Read};
 
-use crate::{
-    format::{write_json, write_response_full, write_response_headers},
-    options::TasksFilter,
-    TaskId,
-};
+use crate::format::{write_json, write_response_full, write_response_headers};
 use clap::Parser;
 use indicatif::ProgressBar;
 use miette::{IntoDiagnostic, Result};
@@ -173,19 +169,6 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
-    pub fn tasks(&self, tid: Option<TaskId>, task_filter: TasksFilter) -> Result<()> {
-        let response = self
-            .get(format!(
-                "{}/tasks/{}?{}",
-                self.addr,
-                tid.map_or("".to_string(), |uid| uid.to_string()),
-                yaup::to_string(&task_filter).into_diagnostic()?
-            ))
-            .send()
-            .into_diagnostic()?;
-        self.handle_response(response)
-    }
-
     pub fn create_dump(&self) -> Result<()> {
         let response = self
             .post(format!("{}/dumps", self.addr))
@@ -229,10 +212,11 @@ impl Meilisearch {
 
         let spinner = ProgressBar::new_spinner();
 
-        if let Some(uid) = response["uid"]
-            .as_i64()
-            .or_else(|| response["taskUid"].as_i64())
-        {
+        if let Some(uid) = response["uid"].as_i64() {
+            if response["status"] != json!("enqueued") && response["status"] != json!("processing")
+            {
+                return Ok(());
+            }
             loop {
                 let response = self
                     .get(format!("{}/tasks/{}", self.addr, uid))

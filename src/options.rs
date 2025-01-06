@@ -1,8 +1,8 @@
 use clap::Parser;
-use serde::Serialize;
 
 use crate::{
-    inner::Inner, meilisearch::Meilisearch, DocumentsCommand, IndexesCommand, Key, TaskId,
+    batches::BatchesCommand, inner::Inner, meilisearch::Meilisearch, tasks::TasksCommand,
+    DocumentsCommand, IndexesCommand, Key,
 };
 
 #[derive(Debug, Parser)]
@@ -28,15 +28,12 @@ pub enum Command {
     Documents(DocumentsCommand),
     /// Create a dump
     Dump,
-    /// Get information about the task of an index.
-    #[clap(aliases = &["task", "t"])]
-    Tasks {
-        /// The task you want to inspect.
-        task_id: Option<TaskId>,
-        /// The task filters you want to apply.
-        #[clap(flatten)]
-        task_filter: TasksFilter,
-    },
+    /// Get information on the task queue
+    #[clap(subcommand, aliases = &["task", "t"])]
+    Tasks(TasksCommand),
+    /// Get information about the batches
+    #[clap(subcommand, aliases = &["batch", "b"])]
+    Batches(BatchesCommand),
     /// Do an healthcheck
     Health,
     /// Return the version of the running meilisearch instance
@@ -63,27 +60,4 @@ pub enum Command {
     /// Get the keys
     #[clap(subcommand, aliases = &["keys", "k"])]
     Key(Key),
-}
-
-#[derive(Debug, Parser, Serialize)]
-pub struct TasksFilter {
-    /// Number of tasks to return.
-    #[clap(long)]
-    limit: Option<usize>,
-    /// Task id of the first task returned.
-    #[clap(long)]
-    from: Option<usize>,
-    /// Filter tasks by their status.
-    #[clap(long, aliases = &["status"])]
-    statuses: Option<String>,
-    /// Filter tasks by their type.
-    #[clap(long, aliases = &["ty", "type"])]
-    types: Option<String>,
-    /// Filter tasks by their index uid.
-    #[clap(long)]
-    #[serde(rename = "indexUids")]
-    indexes: Option<String>,
-    /// Filter tasks by their uids.
-    #[clap(long, aliases = &["uid"])]
-    uids: Option<String>,
 }
