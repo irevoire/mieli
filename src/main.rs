@@ -8,6 +8,7 @@ mod indexes;
 mod inner;
 mod interactive_search;
 mod keys;
+mod log;
 mod meilisearch;
 mod options;
 mod tasks;
@@ -52,6 +53,7 @@ fn main() -> Result<()> {
         Command::Tl { params, id } => TasksCommand::List { params, id }.execute(meili),
         Command::Batches(command) => command.execute(meili),
         Command::Key(command) => command.execute(meili),
+        Command::Log(command) => command.execute(meili),
         Command::Experimental(command) => command.execute(meili),
     }
 }

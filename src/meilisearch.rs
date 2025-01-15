@@ -11,7 +11,7 @@ use reqwest::{
 };
 use serde_json::{json, Map, Value};
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Clone, Parser)]
 pub struct Meilisearch {
     #[clap(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,

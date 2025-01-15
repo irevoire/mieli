@@ -5,6 +5,7 @@ use crate::{
     documents::AddOrUpdate,
     experimental::Experimental,
     inner::Inner,
+    log::Log,
     meilisearch::Meilisearch,
     tasks::{TaskListParameters, TasksCommand},
     DocumentsCommand, IndexesCommand, Key,
@@ -76,6 +77,9 @@ pub enum Command {
     /// Get or update the keys
     #[clap(subcommand, aliases = &["keys", "k"])]
     Key(Key),
+    /// Get or update the logs
+    #[clap(subcommand, aliases = &["logs"])]
+    Log(Log),
     /// Get or update the experimental features
     #[clap(subcommand, aliases = &["exp", "experimental-features", "experimental-feature", "experimentalFeature", "experimentalFeatures"])]
     Experimental(Experimental),
