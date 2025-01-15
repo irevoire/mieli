@@ -13,10 +13,10 @@ pub enum Log {
     #[clap(aliases = &["get", "retrieve"])]
     Stream {
         /// Specifies either human-readabale or JSON output
-        #[clap(default_value = "human")]
+        #[clap(long, default_value = "human")]
         mode: String,
         /// A string specifying one or more log type and its log level
-        #[clap(default_value = "info")]
+        #[clap(long, default_value = "info")]
         target: String,
     },
     /// Stop streaming the logs
