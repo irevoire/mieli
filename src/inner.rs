@@ -63,7 +63,7 @@ pub fn upgrade() -> Result<()> {
     {
         bin_name = Ok("mieli-linux-amd64");
     }
-    #[cfg(all(target_os = "macos", target_arch = "amd64"))]
+    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     {
         bin_name = Ok("mieli-macos-amd64");
     }

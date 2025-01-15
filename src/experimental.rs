@@ -1,8 +1,8 @@
 use std::io::stdin;
 
 use clap::Parser;
-use miette::{bail, miette, Context, IntoDiagnostic, Result};
-use serde_json::{json, Map, Value};
+use miette::{bail, Context, IntoDiagnostic, Result};
+use serde_json::{Map, Value};
 
 use crate::Meilisearch;
 
