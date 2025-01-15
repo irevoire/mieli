@@ -1,8 +1,13 @@
 use clap::Parser;
 
 use crate::{
-    batches::BatchesCommand, experimental::Experimental, inner::Inner, meilisearch::Meilisearch,
-    tasks::TasksCommand, DocumentsCommand, IndexesCommand, Key,
+    batches::BatchesCommand,
+    documents::AddOrUpdate,
+    experimental::Experimental,
+    inner::Inner,
+    meilisearch::Meilisearch,
+    tasks::{TaskListParameters, TasksCommand},
+    DocumentsCommand, IndexesCommand, Key,
 };
 
 #[derive(Debug, Parser)]
@@ -26,6 +31,8 @@ pub enum Command {
     /// Manipulate documents, add `--help` to see all the subcommands.
     #[clap(subcommand, aliases = &["document", "doc", "docs", "d"])]
     Documents(DocumentsCommand),
+    /// Shortcut to add documents
+    Da(AddOrUpdate),
     /// Create a dump
     Dump,
     /// Create a snapshot
@@ -33,6 +40,13 @@ pub enum Command {
     /// Get information on the task queue
     #[clap(subcommand, aliases = &["task", "t"])]
     Tasks(TasksCommand),
+    /// Shortcut to list the tasks
+    Tl {
+        #[clap(flatten)]
+        params: TaskListParameters,
+        /// Get a single task. Filter cannot be used if an id is specified
+        id: Option<u32>,
+    },
     /// Get information about the batches
     #[clap(subcommand, aliases = &["batch", "b"])]
     Batches(BatchesCommand),

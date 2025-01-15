@@ -22,6 +22,7 @@ pub use crate::options::{Command, Options};
 use clap::Parser;
 use env_logger::Env;
 use miette::Result;
+use tasks::TasksCommand;
 
 fn main() -> Result<()> {
     let opt = Options::parse();
@@ -31,6 +32,7 @@ fn main() -> Result<()> {
     match opt.command {
         Command::Inner(command) => command.execute(),
         Command::Documents(command) => command.execute(meili),
+        Command::Da(params) => DocumentsCommand::Add(params).execute(meili),
         Command::Search {
             search_terms,
             interactive: false,
@@ -47,6 +49,7 @@ fn main() -> Result<()> {
         Command::Version => meili.version(),
         Command::Stats => meili.stats(),
         Command::Tasks(command) => command.execute(meili),
+        Command::Tl { params, id } => TasksCommand::List { params, id }.execute(meili),
         Command::Batches(command) => command.execute(meili),
         Command::Key(command) => command.execute(meili),
         Command::Experimental(command) => command.execute(meili),
