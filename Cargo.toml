@@ -17,17 +17,17 @@ keywords = ["meilisearch", "cli", "search", "bears"]
 atty = "0.2"
 clap = { version = "4.5.26", features = ["derive", "env", "unicode"] }
 clap_complete = "4.5.42"
-reqwest = { version = "0.11.27", default-features = false, features = ["rustls-tls", "blocking", "json"] }
-termion = "2.0.3"
+reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls", "blocking", "json"] }
+termion = "4.0.3"
 serde_json = { version = "1.0.135", features = ["preserve_order"] }
 indicatif = "0.17.9"
 inquire = "0.2.1"
-colored_json = "2.1.0"
-miette = { version = "5.10.0", features = ["fancy"] }
+colored_json = "5.0.0"
+miette = { version = "7.4.0", features = ["fancy"] }
 yaup = "0.3.1"
 serde = { version = "1.0.217", features = ["serde_derive"] }
 serde-cs = "0.2.4"
-dialoguer = "0.10.4"
+dialoguer = "0.11.0"
 tempfile = "3.15.0"
 log = "0.4.25"
 env_logger = "0.11.6"

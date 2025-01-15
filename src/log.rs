@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 
 use clap::Parser;
-use log::{info, warn};
+use log::warn;
 use miette::{IntoDiagnostic, Result};
 use serde_json::json;
 
@@ -72,9 +72,7 @@ impl Meilisearch {
             stdout.write_all(&buf[..read]).into_diagnostic()?;
             stdout.flush().into_diagnostic()?;
         }
-
-        info!("Removing the log listener");
-        self.remove_log()
+        Ok(())
     }
 
     fn remove_log(&self) -> Result<()> {
