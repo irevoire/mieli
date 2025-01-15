@@ -41,6 +41,7 @@ fn main() -> Result<()> {
         Command::Settings => meili.settings(),
         Command::Index(command) => command.execute(meili),
         Command::Dump => meili.create_dump(),
+        Command::Snapshot => meili.create_snapshot(),
         Command::Health => meili.healthcheck(),
         Command::Version => meili.version(),
         Command::Stats => meili.stats(),

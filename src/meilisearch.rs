@@ -177,6 +177,14 @@ impl Meilisearch {
         self.handle_response(response)
     }
 
+    pub fn create_snapshot(&self) -> Result<()> {
+        let response = self
+            .post(format!("{}/snapshots", self.addr))
+            .send()
+            .into_diagnostic()?;
+        self.handle_response(response)
+    }
+
     pub fn healthcheck(&self) -> Result<()> {
         let response = self
             .get(format!("{}/health", self.addr))

@@ -28,6 +28,8 @@ pub enum Command {
     Documents(DocumentsCommand),
     /// Create a dump
     Dump,
+    /// Create a snapshot
+    Snapshot,
     /// Get information on the task queue
     #[clap(subcommand, aliases = &["task", "t"])]
     Tasks(TasksCommand),
