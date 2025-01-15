@@ -7,6 +7,7 @@ use std::{
 
 use clap::{CommandFactory, Parser};
 use clap_complete::{
+    aot::PowerShell,
     generate,
     shells::{Bash, Elvish, Fish, Zsh},
 };
@@ -115,6 +116,7 @@ pub enum Shell {
     Zsh,
     Fish,
     Elvish,
+    Powershell,
 }
 
 impl Shell {
@@ -127,6 +129,7 @@ impl Shell {
             Self::Zsh => generate(Zsh, &mut opt, env!("CARGO_BIN_NAME"), &mut writer),
             Self::Fish => generate(Fish, &mut opt, env!("CARGO_BIN_NAME"), &mut writer),
             Self::Elvish => generate(Elvish, &mut opt, env!("CARGO_BIN_NAME"), &mut writer),
+            Self::Powershell => generate(PowerShell, &mut opt, env!("CARGO_BIN_NAME"), &mut writer),
         }
     }
 
@@ -137,6 +140,7 @@ impl Shell {
             Shell::Zsh => format!("{home}/.zfunc/_mieli",),
             Shell::Fish => format!("{home}/.config/fish/completions/mieli.fish"),
             Shell::Elvish => bail!("I don't know where the elvish completion files are supposed to be. If you use elvish please submit an issue."),
+            Shell::Powershell => bail!("I don't know where the powershell completion files are supposed to be. If you use windows please submit an issue."),
         })
     }
 
@@ -168,6 +172,7 @@ impl Display for Shell {
             Shell::Zsh => write!(f, "zsh"),
             Shell::Fish => write!(f, "fish"),
             Shell::Elvish => write!(f, "elvish"),
+            Shell::Powershell => write!(f, "powershell"),
         }
     }
 }
@@ -179,7 +184,11 @@ pub fn auto_complete(shell: Option<String>) -> Result<()> {
             Some("zsh") => Shell::Zsh,
             Some("fish") => Shell::Fish,
             Some("elvish") => Shell::Elvish,
-            _ => bail!("Unsupported shell `{}`.", shell),
+            Some("powershell") => Shell::Powershell,
+            _ => bail!(
+                "Unsupported shell `{}`. Only `bash`, `zsh`, `fish`, `powershell` and `elvish` are supported.",
+                shell
+            ),
         };
 
         if atty::is(atty::Stream::Stdout) {
