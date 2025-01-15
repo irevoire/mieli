@@ -2,6 +2,7 @@
 
 mod batches;
 mod documents;
+mod experimental;
 mod format;
 mod indexes;
 mod inner;
@@ -48,5 +49,6 @@ fn main() -> Result<()> {
         Command::Tasks(command) => command.execute(meili),
         Command::Batches(command) => command.execute(meili),
         Command::Key(command) => command.execute(meili),
+        Command::Experimental(command) => command.execute(meili),
     }
 }

@@ -1,8 +1,8 @@
 use clap::Parser;
 
 use crate::{
-    batches::BatchesCommand, inner::Inner, meilisearch::Meilisearch, tasks::TasksCommand,
-    DocumentsCommand, IndexesCommand, Key,
+    batches::BatchesCommand, experimental::Experimental, inner::Inner, meilisearch::Meilisearch,
+    tasks::TasksCommand, DocumentsCommand, IndexesCommand, Key,
 };
 
 #[derive(Debug, Parser)]
@@ -59,7 +59,10 @@ pub enum Command {
     /// You can pipe your settings in the command.
     #[clap(aliases = &["set", "setting"])]
     Settings,
-    /// Get the keys
+    /// Get or update the keys
     #[clap(subcommand, aliases = &["keys", "k"])]
     Key(Key),
+    /// Get or update the experimental features
+    #[clap(subcommand, aliases = &["exp", "experimental-features", "experimental-feature", "experimentalFeature", "experimentalFeatures"])]
+    Experimental(Experimental),
 }
