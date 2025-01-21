@@ -26,6 +26,7 @@ pub enum TasksCommand {
     /// Delete tasks
     ///
     /// Delete a finished (succeeded, failed, or canceled) task based on uid, status, type, indexUid, canceledBy, or date. Task deletion is an atomic transaction: either all tasks are successfully deleted, or none are.
+    #[clap(aliases = &["d", "remove", "rm", "r"])]
     Delete(TaskFilter),
 }
 
@@ -56,6 +57,7 @@ pub struct TaskPagination {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskFilter {
     /// Filter tasks by their uid. Separate multiple task uids with a comma (,)
     #[clap(long, aliases = &["uid", "id"])]
@@ -161,7 +163,7 @@ impl Meilisearch {
 
     fn delete_tasks(&self, filter: TaskFilter) -> Result<()> {
         let response = self
-            .post(format!(
+            .delete(format!(
                 "{}/tasks{}",
                 self.addr,
                 yaup::to_string(&filter).into_diagnostic()?
