@@ -1,4 +1,7 @@
-use std::io::{Read, Write};
+use std::{
+    fs::File,
+    io::{BufReader, BufWriter, Read, Write},
+};
 
 use clap::Parser;
 use log::warn;
@@ -25,6 +28,11 @@ pub enum Log {
     /// Update the log target of the logs outputted on stderr
     #[clap(aliases = &["update"])]
     Stderr { target: String },
+    /// Shortcut to profile meilisearch
+    Profile {
+        /// A string specifying one or more log type and its log level
+        target: String,
+    },
 }
 
 impl Log {
@@ -33,6 +41,7 @@ impl Log {
             Log::Stream { mode, target } => meili.stream_logs(mode, target),
             Log::Remove => meili.remove_log(),
             Log::Stderr { target } => meili.update_logs(target),
+            Log::Profile { target } => meili.profile(target),
         }
     }
 }
@@ -90,5 +99,48 @@ impl Meilisearch {
             .send()
             .into_diagnostic()?;
         self.handle_response(response)
+    }
+
+    fn profile(&self, target: String) -> Result<()> {
+        let response = self
+            .post(format!("{}/logs/stream", self.addr))
+            .json(&json!({ "mode": "profile", "target": target}))
+            .send()
+            .into_diagnostic()?;
+        if !response.status().is_success() {
+            self.handle_response(response)?;
+            return Ok(());
+        }
+        write_response_headers(&response, self.verbose)?;
+
+        let this = self.clone();
+        let ret = ctrlc::set_handler(move || {
+            let ret = this.remove_log();
+            if ret.is_err() {
+                warn!("Could not disable the log listener, you may need to remove the listener with `mieli stream remove`");
+            }
+        });
+        if ret.is_err() {
+            warn!("Could not set up the ctrlc handler. You may need to call remove the stream after exiting with `mieli stream remove`");
+        }
+
+        let trace = tracing_trace::TraceReader::new(BufReader::new(response));
+        let profile =
+            tracing_trace::processor::firefox_profiler::to_firefox_profile(trace, "Meilisearch")
+                .unwrap();
+        let now = time::OffsetDateTime::now_utc();
+        let filename = format!(
+            "firefox-{}_{}_{}-{}:{}:{}.profile",
+            now.year(),
+            now.month() as u8,
+            now.day(),
+            now.hour(),
+            now.minute(),
+            now.second()
+        );
+        let mut output_file = BufWriter::new(File::create(filename).unwrap());
+        serde_json::to_writer(&mut output_file, &profile).unwrap();
+        output_file.flush().unwrap();
+        Ok(())
     }
 }
