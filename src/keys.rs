@@ -9,7 +9,7 @@ use crate::Meilisearch;
 #[derive(Debug, Parser)]
 pub enum Key {
     /// List all keys.
-    #[clap(aliases = &["all"])]
+    #[clap(aliases = &["all", "l"])]
     List,
     /// Get a key, by default use the key provided by `-k`.
     Get {
@@ -27,6 +27,7 @@ pub enum Key {
         k: Option<String>,
     },
     /// Delete a key.
+    #[clap(aliases = &["d", "r", "rm", "remove"])]
     Delete {
         /// The key you want to delete.
         k: String,

@@ -46,7 +46,7 @@ pub enum DocumentsCommand {
     #[clap(aliases = &["e"])]
     Edit,
     /// Delete documents. If no argument are specified all documents are deleted.
-    #[clap(aliases = &["d"])]
+    #[clap(aliases = &["d", "rm", "remove"])]
     Delete {
         /// The ids of the documents you want to delete
         #[clap(long, conflicts_with = "filter")]

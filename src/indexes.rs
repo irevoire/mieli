@@ -47,6 +47,7 @@ pub enum IndexesCommand {
         primary: Option<String>,
     },
     /// Delete an index, by default use the index provided by `-i`.
+    #[clap(aliases = &["remove", "rm", "del", "d"])]
     Delete {
         /// The index you want to delete.
         #[clap(aliases = &["idx", "uid", "index_uid", "indexUid"])]
