@@ -12,7 +12,7 @@ use serde_json::{json, Map, Value};
 
 #[derive(Debug, Clone, Parser)]
 pub struct Meilisearch {
-    #[clap(short, long, action = clap::ArgAction::Count)]
+    #[clap(global = true, short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
     /// The server address in the format of ip_addr:port (ex: http://0.0.0.0:7700)

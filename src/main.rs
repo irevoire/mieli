@@ -28,7 +28,16 @@ use tasks::TasksCommand;
 fn main() -> Result<()> {
     let opt = Options::parse();
     let meili = opt.meilisearch;
-    env_logger::Builder::from_env(Env::default().default_filter_or("mieli=info")).init();
+    let log_levels = [
+        "mieli=info",
+        "mieli=debug",
+        "mieli=trace",
+        "debug,mieli=trace",
+        "trace",
+    ];
+    let log_level = log_levels[(meili.verbose as usize).clamp(0, log_levels.len() - 1)];
+    env_logger::Builder::from_env(Env::default().default_filter_or(log_level)).init();
+    ::log::trace!("verbosity selected: {log_level}");
 
     match opt.command {
         Command::Inner(command) => command.execute(),
