@@ -2,7 +2,6 @@ use std::io::{stdin, Read};
 
 use crate::format::{write_json, write_response_full, write_response_headers};
 use clap::Parser;
-use indicatif::ProgressBar;
 use miette::{IntoDiagnostic, Result};
 use reqwest::{
     blocking::{Client, RequestBuilder, Response},
@@ -213,59 +212,68 @@ impl Meilisearch {
         if response.status() == StatusCode::NO_CONTENT {
             return write_response_headers(&response, self.verbose);
         }
-        let response = write_response_full(response, self.verbose)?;
+        let mut response = write_response_full(response, self.verbose)?;
         if self.r#async {
             return Ok(());
         }
 
-        let spinner = ProgressBar::new_spinner();
+        let uid = response["taskUid"].as_i64().or(response["uid"].as_i64());
+        if let Some(uid) = uid {
+            if response["status"] == json!("processing") {
+                let mut progress = json!(null);
+                println!();
+                loop {
+                    let new_response = self
+                        .get(format!("{}/tasks/{}", self.addr, uid))
+                        .send()
+                        .into_diagnostic()?;
+                    let new_response = new_response.json::<Value>().into_diagnostic()?;
+                    let batch_uid = new_response["batchUid"].as_i64().unwrap();
+                    let new_progress = self
+                        .get(format!("{}/batches/{}", self.addr, batch_uid))
+                        .send()
+                        .into_diagnostic()?;
+                    let new_progress = new_progress.json::<Value>().into_diagnostic()?;
+                    let new_progress = new_progress["progress"].clone();
 
-        if let Some(uid) = response["uid"].as_i64() {
-            if response["status"] != json!("enqueued") && response["status"] != json!("processing")
-            {
-                return Ok(());
-            }
-            loop {
-                let response = self
-                    .get(format!("{}/tasks/{}", self.addr, uid))
-                    .send()
-                    .into_diagnostic()?;
-                let json = response.json::<Value>().into_diagnostic()?;
-                match json["status"].as_str() {
-                    None => {
-                        return Ok(());
+                    #[rustfmt::skip]
+                    let lines = serde_json::to_string_pretty(&response).unwrap().lines().count()
+                        + serde_json::to_string_pretty(&progress).unwrap().lines().count()
+                        + 1; // because we're doing a print*ln*
+                    println!("{}", "\x1b[K\x1b[A".repeat(lines));
+                    let new_response = write_json(new_response)?;
+                    let new_progress = write_json(new_progress)?;
+
+                    match new_response["status"].as_str() {
+                        None => {
+                            return Ok(());
+                        }
+                        Some("succeeded" | "failed" | "canceled") => {
+                            break;
+                        }
+                        _ => (),
                     }
-                    Some(msg @ "succeeded") | Some(msg @ "failed") => {
-                        spinner.finish_with_message(msg.to_string());
-                        write_json(json)?;
-                        break;
-                    }
-                    Some(status) => spinner.set_message(status.to_string()),
+                    std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
+
+                    response = new_response;
+                    progress = new_progress;
                 }
-                std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
-            }
-        } else if let Some(uid) = response["updateId"].as_i64() {
-            loop {
-                let response = self
-                    .get(format!(
-                        "{}/indexes/{}/updates/{}",
-                        self.addr, self.index, uid
-                    ))
-                    .send()
-                    .into_diagnostic()?;
-                let json = response.json::<Value>().into_diagnostic()?;
-                match json["status"].as_str() {
-                    None => {
-                        return Ok(());
-                    }
-                    Some(msg @ "processed") | Some(msg @ "failed") => {
-                        spinner.finish_with_message(msg.to_string());
-                        write_json(json)?;
-                        break;
-                    }
-                    Some(status) => spinner.set_message(status.to_string()),
+            } else if response["progress"] != json!("null") {
+                loop {
+                    let new_response = self
+                        .get(format!("{}/batches/{}", self.addr, uid))
+                        .send()
+                        .into_diagnostic()?;
+                    let new_response = new_response.json::<Value>().into_diagnostic()?;
+                    #[rustfmt::skip]
+                    let lines = serde_json::to_string_pretty(&response).unwrap().lines().count()
+                        + 1; // because we're doing a print*ln*
+                    println!("{}", "\x1b[K\x1b[A".repeat(lines));
+                    let new_response = write_json(new_response)?;
+                    std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
+
+                    response = new_response;
                 }
-                std::thread::sleep(std::time::Duration::from_millis(self.interval as u64));
             }
         }
         Ok(())

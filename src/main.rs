@@ -28,7 +28,7 @@ use tasks::TasksCommand;
 fn main() -> Result<()> {
     let opt = Options::parse();
     let meili = opt.meilisearch;
-    env_logger::Builder::from_env(Env::default().default_filter_or("mieli=debug")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("mieli=info")).init();
 
     match opt.command {
         Command::Inner(command) => command.execute(),
