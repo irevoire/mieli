@@ -43,6 +43,7 @@ fn main() -> Result<()> {
         Command::Inner(command) => command.execute(),
         Command::Documents(command) => command.execute(meili),
         Command::Da(params) => DocumentsCommand::Add(params).execute(meili),
+        Command::Dd { ids, filter } => DocumentsCommand::Delete { ids, filter }.execute(meili),
         Command::Search {
             search_terms,
             interactive: false,

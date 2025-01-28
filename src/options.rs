@@ -2,7 +2,7 @@ use clap::Parser;
 
 use crate::{
     batches::BatchesCommand,
-    documents::AddOrUpdate,
+    documents::{AddOrUpdate, DocId},
     experimental::Experimental,
     inner::Inner,
     log::Log,
@@ -34,6 +34,15 @@ pub enum Command {
     Documents(DocumentsCommand),
     /// Shortcut to add documents
     Da(AddOrUpdate),
+    /// Shortcut to delete documents
+    Dd {
+        /// The ids of the documents you want to delete
+        #[clap(long, conflicts_with = "filter")]
+        ids: Option<Vec<DocId>>,
+        /// The filter used to delete the documents
+        #[clap(long)]
+        filter: Option<String>,
+    },
     /// Create a dump
     Dump,
     /// Create a snapshot
