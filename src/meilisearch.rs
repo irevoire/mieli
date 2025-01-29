@@ -219,7 +219,8 @@ impl Meilisearch {
 
         let uid = response["taskUid"].as_i64().or(response["uid"].as_i64());
         if let Some(uid) = uid {
-            if response["status"] == json!("processing") {
+            if response["status"] == json!("processing") || response["status"] == json!("enqueued")
+            {
                 let mut progress = json!(null);
                 println!();
                 loop {
@@ -258,7 +259,7 @@ impl Meilisearch {
                     response = new_response;
                     progress = new_progress;
                 }
-            } else if response["progress"] != json!("null") {
+            } else if response["progress"].is_null() {
                 loop {
                     let new_response = self
                         .get(format!("{}/batches/{}", self.addr, uid))
