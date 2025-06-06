@@ -73,6 +73,7 @@ pub struct AddOrUpdate {
 }
 
 #[derive(Default, PartialEq, Eq, Debug, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetDocumentBaseParameter {
     #[clap(long, aliases = &["field"])]
     #[serde(skip_serializing_if = "Option::is_none")]

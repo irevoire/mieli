@@ -229,14 +229,17 @@ impl Meilisearch {
                         .send()
                         .into_diagnostic()?;
                     let new_response = new_response.json::<Value>().into_diagnostic()?;
-                    let batch_uid = new_response["batchUid"].as_i64().unwrap();
-                    let new_progress = self
-                        .get(format!("{}/batches/{}", self.addr, batch_uid))
-                        .send()
-                        .into_diagnostic()?;
-                    let new_progress = new_progress.json::<Value>().into_diagnostic()?;
-                    let new_progress = new_progress["progress"].clone();
-
+                    let new_progress = match new_response["batchUid"].as_i64() {
+                        Some(batch_uid) => {
+                            let new_progress = self
+                                .get(format!("{}/batches/{}", self.addr, batch_uid))
+                            .send()
+                            .into_diagnostic()?;
+                                let new_progress = new_progress.json::<Value>().into_diagnostic()?;
+                                new_progress["progress"].clone()
+                            }
+                            None => json!(null),
+                        };
                     #[rustfmt::skip]
                     let lines = serde_json::to_string_pretty(&response).unwrap().lines().count()
                         + serde_json::to_string_pretty(&progress).unwrap().lines().count()
