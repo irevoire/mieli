@@ -6,6 +6,7 @@ use serde_json::json;
 use crate::Meilisearch;
 
 #[derive(Debug, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListIndexes {
     /// Number of indexes to skip
     #[clap(long)]

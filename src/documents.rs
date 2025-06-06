@@ -85,6 +85,7 @@ pub struct GetDocumentBaseParameter {
 }
 
 #[derive(Default, PartialEq, Eq, Debug, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetDocumentExtraParameter {
     /// Number of documents to skip
     #[clap(long, aliases = &["from"])]

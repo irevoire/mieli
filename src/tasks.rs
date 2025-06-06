@@ -31,6 +31,7 @@ pub enum TasksCommand {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskListParameters {
     #[clap(flatten)]
     #[serde(flatten)]
@@ -41,6 +42,7 @@ pub struct TaskListParameters {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Parser, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskPagination {
     /// Number of tasks to return
     #[clap(long)]
